@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Для production используйте PostgreSQL:
+// datasource db {
+//   provider = "postgresql"
+//   url      = env("DATABASE_URL")
+// }
+
 model Category {
   id    Int    @id @default(autoincrement())
   name  String
@@ -98,11 +104,21 @@ model Guest {
   id      Int     @id @default(autoincrement())
   name    String
   phone   String  @unique
+  email   String?
   bonuses Int     @default(0)
   orders  Order[]
   gender String @default("")
   birthday Int?
   tags String @default("")
+  passwordHash String?
+  refreshToken String?
+  registered Boolean @default(false)
+  segment String @default("Новые")
+  lastVisit DateTime?
+  createdAt DateTime @default(now())
+  addresses GuestAddress[]
+  favorites GuestFavorite[]
+  bonusHistory BonusTransaction[]
 }
 
 model Order {
@@ -401,5 +417,53 @@ model PurchaseRequest {
   ingredient Ingredient @relation(fields: [ingredientId], references: [id])
   quantity Float
   status String @default("Черновик")
+  createdAt DateTime @default(now())
+}
+
+model IdempotencyKey {
+  id String @id
+  response String
+  statusCode Int @default(200)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
+model GuestAddress {
+  id Int @id @default(autoincrement())
+  guestId Int
+  guest Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  label String
+  street String
+  building String
+  apartment String @default("")
+  entrance String @default("")
+  floor String @default("")
+  intercom String @default("")
+  comment String @default("")
+  lat Float?
+  lng Float?
+  isDefault Boolean @default(false)
+  createdAt DateTime @default(now())
+}
+
+model GuestFavorite {
+  id Int @id @default(autoincrement())
+  guestId Int
+  guest Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  itemId Int
+  createdAt DateTime @default(now())
+  @@unique([guestId, itemId])
+}
+
+model BonusTransaction {
+  id Int @id @default(autoincrement())
+  guestId Int
+  guest Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  amount Int
+  type String
+  reason String
+  orderId Int?
   createdAt DateTime @default(now())
 }

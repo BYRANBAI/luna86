@@ -17,8 +17,7 @@ const sectionFor = (entity: string) => ({
 
 async function guard(entity = "dashboard") {
   const user = await currentUser();
-  // Временно для демонстрации разрешаем доступ без авторизации
-  if (!user) return { user: { id: 1, role: "owner" } };
+  if (!user) return { error: NextResponse.json({ error: "Не авторизован" }, { status: 401 }) };
   if (!canAccess(user.role, sectionFor(entity))) return { error: NextResponse.json({ error: "Недостаточно прав" }, { status: 403 }) };
   return { user };
 }

@@ -33,7 +33,8 @@
         {
             "type": "editor-browser",
             "request": "launch",
-            "name": "Запустить встроенный браузер для localhost",
+            "name": "Запустить встроенный брауз
+            ер для localhost",
             "url": "http://localhost:8080",
             "webRoot": "${workspaceFolder}"
         }
