@@ -46,6 +46,9 @@ export default function CheckoutPage() {
   const [bonusesToUse, setBonusesToUse] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [comment, setComment] = useState("");
+  const [promoCode, setPromoCode] = useState("");
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoError, setPromoError] = useState("");
   const [newAddress, setNewAddress] = useState({
     label: "Дом",
     street: "",
@@ -175,6 +178,20 @@ export default function CheckoutPage() {
     }
   };
 
+  const applyPromoCode = () => {
+    setPromoError("");
+    setPromoDiscount(0);
+    const code = promoCode.trim().toUpperCase();
+    if (!code) return;
+    if (code === "WELCOME15") {
+      setPromoDiscount(15);
+    } else if (code === "SALE10") {
+      setPromoDiscount(10);
+    } else {
+      setPromoError("Промокод не найден");
+    }
+  };
+
   const placeOrder = async () => {
     if (!selectedAddress) {
       alert("Выберите адрес доставки");
@@ -221,262 +238,172 @@ export default function CheckoutPage() {
 
   const cartTotal = cart.reduce((sum, c) => sum + c.price * c.qty, 0);
   const maxBonusUse = guest ? Math.min(guest.bonuses, Math.floor(cartTotal * 0.5)) : 0;
-  const finalTotal = cartTotal - bonusesToUse;
+  const promoAmount = Math.floor(cartTotal * promoDiscount / 100);
+  const finalTotal = cartTotal - bonusesToUse - promoAmount;
+
+  const card: React.CSSProperties = { background: "#fff", borderRadius: 16, padding: 24, marginBottom: 16, boxShadow: "0 1px 4px rgba(139, 157, 195, 0.12)" };
+  const inp2 = "w-full rounded-xl border border-[#e3e8ef] bg-[#f8f9fb] px-4 py-2 text-[#2c3e50] outline-none focus:border-[#8b9dc3] focus:bg-white";
+  const sectionTitle: React.CSSProperties = { fontWeight: 800, fontSize: 18, color: "#2c3e50", marginBottom: 16 };
 
   return (
-    <main className="min-h-screen bg-[#F6F1E8]">
-      <nav className="sticky top-0 z-50 border-b border-[#E2D9C8] bg-[#FBF7EF]/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-2xl font-bold">
-            <span className="text-[#C8853F]">◐</span> ЛУНА
+    <main style={{ minHeight: "100vh", background: "#f5f7fa" }}>
+      <header style={{ background: "#fff", borderBottom: "1px solid #e3e8ef", position: "sticky", top: 0, zIndex: 100 }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 16px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+            <span style={{ fontSize: 24 }}>🌙</span>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: "#E91E63", letterSpacing: 2 }}>LUNA</span>
           </Link>
-          <Link
-            href="/menu"
-            className="text-sm font-medium text-[#8A8A80] transition hover:text-[#C8853F]"
-          >
-            ← Вернуться в меню
-          </Link>
+          <Link href="/menu" style={{ fontSize: 14, color: "#a0aec0", textDecoration: "none", fontWeight: 600 }}>← Вернуться в меню</Link>
         </div>
-      </nav>
+      </header>
 
-      <section className="px-6 py-12">
-        <div className="mx-auto max-w-7xl">
-          <h1 className="mb-8 font-serif text-4xl font-bold text-[#1F2421]">
-            Оформление <span className="italic text-[#C8853F]">заказа</span>
-          </h1>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 16px" }}>
+        <h1 style={{ fontWeight: 800, fontSize: 28, color: "#2c3e50", marginBottom: 24 }}>Оформление заказа</h1>
 
-          <div className="grid gap-8 lg:grid-cols-3">
-            {/* Основная форма */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Адрес доставки */}
-              <div className="rounded-2xl border border-[#E2D9C8] bg-white p-6">
-                <h2 className="mb-4 font-serif text-2xl font-bold text-[#1F2421]">
-                  Адрес доставки
-                </h2>
-
-                <div className="space-y-3">
-                  {addresses.map((addr) => (
-                    <label
-                      key={addr.id}
-                      className={`flex cursor-pointer items-start gap-3 rounded-xl border-2 p-4 transition ${
-                        selectedAddress === addr.id
-                          ? "border-[#C8853F] bg-[#F0E3D0]"
-                          : "border-[#E2D9C8] hover:border-[#C8853F]/50"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="address"
-                        checked={selectedAddress === addr.id}
-                        onChange={() => setSelectedAddress(addr.id)}
-                        className="mt-1"
-                      />
-                      <div className="flex-1">
-                        <div className="mb-1 flex items-center gap-2">
-                          <span className="font-medium text-[#1F2421]">{addr.label}</span>
-                          {addr.isDefault && (
-                            <span className="rounded-full bg-[#C8853F] px-2 py-0.5 text-xs text-white">
-                              По умолчанию
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-[#8A8A80]">
-                          {addr.street}, {addr.building}
-                          {addr.apartment && `, кв. ${addr.apartment}`}
-                        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 24, alignItems: "start" }}>
+          <div>
+            {/* Адрес */}
+            <div style={card}>
+              <div style={sectionTitle}>Адрес доставки</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {addresses.map((addr) => (
+                  <label key={addr.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: 16, borderRadius: 12, border: `2px solid ${selectedAddress === addr.id ? "#8b9dc3" : "#e3e8ef"}`, background: selectedAddress === addr.id ? "#f0f3f7" : "#fff", cursor: "pointer" }}>
+                    <input type="radio" name="address" checked={selectedAddress === addr.id} onChange={() => setSelectedAddress(addr.id)} style={{ marginTop: 2 }} />
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontWeight: 700, fontSize: 14, color: "#2c3e50" }}>{addr.label}</span>
+                        {addr.isDefault && <span style={{ background: "#8b9dc3", color: "#fff", fontSize: 11, padding: "2px 8px", borderRadius: 6, fontWeight: 700 }}>По умолчанию</span>}
                       </div>
-                    </label>
-                  ))}
-
-                  {!showNewAddress ? (
-                    <button
-                      onClick={() => setShowNewAddress(true)}
-                      className="w-full rounded-xl border-2 border-dashed border-[#E2D9C8] p-4 text-sm font-medium text-[#8A8A80] transition hover:border-[#C8853F] hover:text-[#C8853F]"
-                    >
-                      + Добавить новый адрес
-                    </button>
-                  ) : (
-                    <div className="space-y-3 rounded-xl border-2 border-[#C8853F] bg-[#F0E3D0]/30 p-4">
-                      <input
-                        type="text"
-                        placeholder="Улица"
-                        value={newAddress.street}
-                        onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
-                        className="w-full rounded-lg border border-[#E2D9C8] bg-white px-4 py-2 text-[#1F2421] outline-none focus:border-[#C8853F]"
-                      />
-                      <div className="grid grid-cols-2 gap-3">
-                        <input
-                          type="text"
-                          placeholder="Дом"
-                          value={newAddress.building}
-                          onChange={(e) => setNewAddress({ ...newAddress, building: e.target.value })}
-                          className="rounded-lg border border-[#E2D9C8] bg-white px-4 py-2 text-[#1F2421] outline-none focus:border-[#C8853F]"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Квартира"
-                          value={newAddress.apartment}
-                          onChange={(e) => setNewAddress({ ...newAddress, apartment: e.target.value })}
-                          className="rounded-lg border border-[#E2D9C8] bg-white px-4 py-2 text-[#1F2421] outline-none focus:border-[#C8853F]"
-                        />
-                      </div>
-                      <div className="flex gap-3">
-                        <button
-                          onClick={saveNewAddress}
-                          className="flex-1 rounded-lg bg-[#C8853F] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#A86B2C]"
-                        >
-                          Сохранить
-                        </button>
-                        <button
-                          onClick={() => setShowNewAddress(false)}
-                          className="rounded-lg border border-[#E2D9C8] px-4 py-2 text-sm font-medium text-[#8A8A80] transition hover:bg-[#F6F1E8]"
-                        >
-                          Отмена
-                        </button>
-                      </div>
+                      <p style={{ fontSize: 13, color: "#a0aec0" }}>{addr.street}, {addr.building}{addr.apartment && `, кв. ${addr.apartment}`}</p>
                     </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Бонусы */}
-              {guest && guest.bonuses > 0 && (
-                <div className="rounded-2xl border border-[#E2D9C8] bg-white p-6">
-                  <h2 className="mb-4 font-serif text-2xl font-bold text-[#1F2421]">
-                    Бонусы
-                  </h2>
-                  <p className="mb-3 text-sm text-[#8A8A80]">
-                    Доступно: <span className="font-medium text-[#C8853F]">{guest.bonuses}</span> бонусов
-                    (можно списать до {maxBonusUse} ₽)
-                  </p>
-                  <input
-                    type="number"
-                    min="0"
-                    max={maxBonusUse}
-                    value={bonusesToUse}
-                    onChange={(e) => setBonusesToUse(Math.min(maxBonusUse, parseInt(e.target.value) || 0))}
-                    className="w-full rounded-lg border border-[#E2D9C8] bg-white px-4 py-2 text-[#1F2421] outline-none focus:border-[#C8853F]"
-                    placeholder="Сколько бонусов использовать?"
-                  />
-                </div>
-              )}
-
-              {/* Оплата */}
-              <div className="rounded-2xl border border-[#E2D9C8] bg-white p-6">
-                <h2 className="mb-4 font-serif text-2xl font-bold text-[#1F2421]">
-                  Способ оплаты
-                </h2>
-                <div className="space-y-3">
-                  <label className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-[#E2D9C8] p-4 transition hover:border-[#C8853F]">
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="card"
-                      checked={paymentMethod === "card"}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                    />
-                    <span className="font-medium text-[#1F2421]">Картой онлайн</span>
                   </label>
-                  <label className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-[#E2D9C8] p-4 transition hover:border-[#C8853F]">
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="cash"
-                      checked={paymentMethod === "cash"}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                    />
-                    <span className="font-medium text-[#1F2421]">Наличными курьеру</span>
-                  </label>
-                </div>
-              </div>
+                ))}
 
-              {/* Комментарий */}
-              <div className="rounded-2xl border border-[#E2D9C8] bg-white p-6">
-                <h2 className="mb-4 font-serif text-2xl font-bold text-[#1F2421]">
-                  Комментарий к заказу
-                </h2>
-                <textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Укажите дополнительные пожелания..."
-                  className="w-full rounded-lg border border-[#E2D9C8] bg-white px-4 py-3 text-[#1F2421] outline-none focus:border-[#C8853F]"
-                  rows={3}
-                />
+                {!showNewAddress ? (
+                  <button onClick={() => setShowNewAddress(true)} style={{ padding: 16, borderRadius: 12, border: "2px dashed #e3e8ef", background: "#fff", color: "#a0aec0", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+                    + Добавить новый адрес
+                  </button>
+                ) : (
+                  <div style={{ padding: 16, borderRadius: 12, border: "2px solid #8b9dc3", background: "#f0f3f7", display: "flex", flexDirection: "column", gap: 10 }}>
+                    <input type="text" placeholder="Улица" value={newAddress.street} onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })} className={inp2} />
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      <input type="text" placeholder="Дом" value={newAddress.building} onChange={(e) => setNewAddress({ ...newAddress, building: e.target.value })} className={inp2} />
+                      <input type="text" placeholder="Квартира" value={newAddress.apartment} onChange={(e) => setNewAddress({ ...newAddress, apartment: e.target.value })} className={inp2} />
+                    </div>
+                    <div style={{ display: "flex", gap: 10 }}>
+                      <button onClick={saveNewAddress} style={{ flex: 1, background: "#8b9dc3", color: "#fff", border: "none", borderRadius: 10, padding: "10px 0", fontWeight: 700, cursor: "pointer" }}>Сохранить</button>
+                      <button onClick={() => setShowNewAddress(false)} style={{ padding: "10px 20px", border: "1.5px solid #e3e8ef", borderRadius: 10, background: "#fff", color: "#a0aec0", fontWeight: 600, cursor: "pointer" }}>Отмена</button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Итоговая карточка */}
-            <div className="lg:col-span-1">
-              <div className="sticky top-24 rounded-2xl border border-[#E2D9C8] bg-white p-6 shadow-lg">
-                <h2 className="mb-4 font-serif text-2xl font-bold text-[#1F2421]">
-                  Ваш заказ
-                </h2>
-
-                <div className="mb-4 space-y-3">
-                  {cart.map((cartItem) => {
-                    const item = items.find((i) => i.id === cartItem.itemId);
-                    if (!item) return null;
-
-                    return (
-                      <div key={cartItem.itemId} className="flex items-center gap-3">
-                        <div className="h-12 w-12 overflow-hidden rounded-lg bg-[#F6F1E8]">
-                          {item.photo && (
-                            <img
-                              src={item.photo}
-                              alt={item.name}
-                              className="h-full w-full object-cover"
-                            />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-[#1F2421]">{item.name}</p>
-                          <p className="text-xs text-[#8A8A80]">
-                            {cartItem.qty} × {cartItem.price} ₽
-                          </p>
-                        </div>
-                        <span className="font-medium text-[#1F2421]">
-                          {cartItem.qty * cartItem.price} ₽
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="mb-4 space-y-2 border-t border-[#E2D9C8] pt-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[#8A8A80]">Сумма</span>
-                    <span className="font-medium text-[#1F2421]">{cartTotal} ₽</span>
-                  </div>
-                  {bonusesToUse > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#8A8A80]">Списано бонусов</span>
-                      <span className="font-medium text-[#C8853F]">−{bonusesToUse} ₽</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between border-t border-[#E2D9C8] pt-2">
-                    <span className="font-serif text-lg font-bold text-[#1F2421]">Итого</span>
-                    <span className="font-serif text-lg font-bold text-[#1F2421]">
-                      {finalTotal} ₽
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={placeOrder}
-                  disabled={loading || !selectedAddress}
-                  className="w-full rounded-full bg-[#C8853F] px-6 py-4 font-medium text-white transition hover:bg-[#A86B2C] disabled:bg-[#8A8A80]"
-                >
-                  {loading ? "Оформление..." : "Оформить заказ"}
-                </button>
-
-                <p className="mt-3 text-center text-xs text-[#8A8A80]">
-                  Время доставки: 45–60 минут
+            {/* Бонусы */}
+            {guest && guest.bonuses > 0 && (
+              <div style={card}>
+                <div style={sectionTitle}>Бонусы</div>
+                <p style={{ fontSize: 14, color: "#a0aec0", marginBottom: 12 }}>
+                  Доступно: <span style={{ color: "#8b9dc3", fontWeight: 700 }}>{guest.bonuses}</span> бонусов (можно списать до {maxBonusUse} ₽)
                 </p>
+                <input type="number" min="0" max={maxBonusUse} value={bonusesToUse}
+                  onChange={(e) => setBonusesToUse(Math.min(maxBonusUse, parseInt(e.target.value) || 0))}
+                  className={inp2} placeholder="Сколько бонусов использовать?" />
               </div>
+            )}
+
+            {/* Оплата */}
+            <div style={card}>
+              <div style={sectionTitle}>Способ оплаты</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {[{ val: "card", label: "💳 Картой онлайн" }, { val: "cash", label: "💵 Наличными курьеру" }].map(opt => (
+                  <label key={opt.val} style={{ display: "flex", alignItems: "center", gap: 12, padding: 16, borderRadius: 12, border: `2px solid ${paymentMethod === opt.val ? "#8b9dc3" : "#e3e8ef"}`, background: paymentMethod === opt.val ? "#f0f3f7" : "#fff", cursor: "pointer" }}>
+                    <input type="radio" name="payment" value={opt.val} checked={paymentMethod === opt.val} onChange={(e) => setPaymentMethod(e.target.value)} />
+                    <span style={{ fontWeight: 600, fontSize: 15, color: "#2c3e50" }}>{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Комментарий */}
+            <div style={card}>
+              <div style={sectionTitle}>Комментарий к заказу</div>
+              <textarea value={comment} onChange={(e) => setComment(e.target.value)}
+                placeholder="Укажите дополнительные пожелания..."
+                className={inp2} rows={3} style={{ resize: "none", width: "100%", boxSizing: "border-box" }} />
+            </div>
+
+            {/* Промокод */}
+            <div style={card}>
+              <div style={sectionTitle}>Промокод</div>
+              <div style={{display: "flex", gap: 10, marginBottom: 8}}>
+                <input type="text" value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  placeholder="Введите промокод" className={inp2} style={{flex: 1}} />
+                <button onClick={applyPromoCode} style={{background: "#8b9dc3", color: "#fff", border: "none", borderRadius: 10, padding: "0 24px", fontWeight: 700, cursor: "pointer"}}>
+                  Применить
+                </button>
+              </div>
+              {promoDiscount > 0 && <p style={{fontSize: 14, color: "#22C55E", fontWeight: 600}}>✓ Скидка {promoDiscount}% применена</p>}
+              {promoError && <p style={{fontSize: 14, color: "#8b9dc3"}}>{promoError}</p>}
+              <p style={{fontSize: 12, color: "#AAA", marginTop: 8}}>Например: WELCOME15, SALE10</p>
+            </div>
+          </div>
+
+          {/* Итог */}
+          <div style={{ position: "sticky", top: 80 }}>
+            <div style={{ background: "#fff", borderRadius: 16, padding: 24, boxShadow: "0 2px 12px rgba(0,0,0,0.09)" }}>
+              <div style={sectionTitle}>Ваш заказ</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
+                {cart.map((cartItem) => {
+                  const item = items.find((i) => i.id === cartItem.itemId);
+                  if (!item) return null;
+                  return (
+                    <div key={cartItem.itemId} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ width: 48, height: 48, borderRadius: 10, overflow: "hidden", background: "#F8F8F8", flexShrink: 0 }}>
+                        {item.photo && <img src={item.photo} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: 14, fontWeight: 600, color: "#2c3e50", marginBottom: 2 }}>{item.name}</p>
+                        <p style={{ fontSize: 12, color: "#a0aec0" }}>{cartItem.qty} × {cartItem.price} ₽</p>
+                      </div>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: "#2c3e50" }}>{cartItem.qty * cartItem.price} ₽</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ borderTop: "1px solid #F0F0F0", paddingTop: 16, display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#a0aec0" }}>
+                  <span>Сумма</span><span style={{ fontWeight: 600, color: "#2c3e50" }}>{cartTotal} ₽</span>
+                </div>
+                {bonusesToUse > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
+                    <span style={{ color: "#a0aec0" }}>Списано бонусов</span><span style={{ fontWeight: 700, color: "#8b9dc3" }}>−{bonusesToUse} ₽</span>
+                  </div>
+                )}
+                {promoDiscount > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
+                    <span style={{ color: "#a0aec0" }}>Промокод ({promoCode})</span><span style={{ fontWeight: 700, color: "#22C55E" }}>−{promoAmount} ₽</span>
+                  </div>
+                )}
+                <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 8, borderTop: "1px solid #F0F0F0" }}>
+                  <span style={{ fontWeight: 800, fontSize: 18, color: "#2c3e50" }}>Итого</span>
+                  <span style={{ fontWeight: 800, fontSize: 18, color: "#2c3e50" }}>{finalTotal} ₽</span>
+                </div>
+              </div>
+
+              <button onClick={placeOrder} disabled={loading || !selectedAddress} style={{
+                width: "100%", background: loading || !selectedAddress ? "#ccc" : "#8b9dc3",
+                color: "#fff", border: "none", borderRadius: 12, padding: "14px 0",
+                fontWeight: 800, fontSize: 16, cursor: loading || !selectedAddress ? "not-allowed" : "pointer"
+              }}>
+                {loading ? "Оформление..." : "Оформить заказ"}
+              </button>
+              <p style={{ marginTop: 10, textAlign: "center", fontSize: 12, color: "#AAA" }}>Время доставки: 45–60 минут</p>
             </div>
           </div>
         </div>
-      </section>
+      </div>
     </main>
   );
 }

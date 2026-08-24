@@ -19,7 +19,7 @@ const AddressSchema = z.object({
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = req.headers.get("Authorization");
@@ -33,7 +33,8 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const guestId = parseInt(params.id);
+    const { id } = await params;
+    const guestId = parseInt(id);
     if (payload.userId !== guestId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -55,7 +56,7 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = req.headers.get("Authorization");
@@ -69,7 +70,8 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const guestId = parseInt(params.id);
+    const { id } = await params;
+    const guestId = parseInt(id);
     if (payload.userId !== guestId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -110,7 +112,7 @@ export async function POST(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: error.errors[0].message },
+        { error: error.issues[0].message },
         { status: 400 }
       );
     }

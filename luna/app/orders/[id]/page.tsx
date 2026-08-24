@@ -24,27 +24,34 @@ interface Order {
 }
 
 const statusMap: Record<string, { label: string; color: string; step: number }> = {
-  NEW: { label: "Принят", color: "bg-[#C8853F]", step: 1 },
-  CONFIRMED: { label: "Подтверждён", color: "bg-[#C8853F]", step: 2 },
-  COOKING: { label: "Готовится", color: "bg-[#C8853F]", step: 3 },
-  READY: { label: "Готов", color: "bg-[#C8853F]", step: 4 },
-  DELIVERING: { label: "В пути", color: "bg-[#C8853F]", step: 5 },
-  DELIVERED: { label: "Доставлен", color: "bg-[#2A2723]", step: 6 },
-  CANCELLED: { label: "Отменён", color: "bg-[#8A8A80]", step: 0 },
+  NEW: { label: "Принят", color: "#8b9dc3", step: 1 },
+  CONFIRMED: { label: "Подтверждён", color: "#8b9dc3", step: 2 },
+  COOKING: { label: "Готовится", color: "#8b9dc3", step: 3 },
+  READY: { label: "Готов", color: "#8b9dc3", step: 4 },
+  DELIVERING: { label: "В пути", color: "#8b9dc3", step: 5 },
+  DELIVERED: { label: "Доставлен", color: "#2c3e50", step: 6 },
+  CANCELLED: { label: "Отменён", color: "#a0aec0", step: 0 },
 };
 
-export default function OrderTrackingPage({ params }: { params: { id: string } }) {
+export default function OrderTrackingPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [orderId, setOrderId] = useState<string | null>(null);
 
   useEffect(() => {
+    params.then(p => setOrderId(p.id));
+  }, [params]);
+
+  useEffect(() => {
+    if (!orderId) return;
     loadOrder();
-    const interval = setInterval(loadOrder, 10000); // Обновляем каждые 10 секунд
+    const interval = setInterval(loadOrder, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [orderId]);
 
   const loadOrder = async () => {
+    if (!orderId) return;
     const token = localStorage.getItem("guestToken");
     if (!token) {
       router.push("/auth");
@@ -52,7 +59,7 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
     }
 
     try {
-      const res = await fetch(`/api/orders/${params.id}`, {
+      const res = await fetch(`/api/orders/${orderId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -69,12 +76,14 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
     }
   };
 
+  const cardS: React.CSSProperties = { background: "#fff", borderRadius: 16, padding: 24, marginBottom: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.07)" };
+
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#F6F1E8]">
-        <div className="text-center">
-          <div className="mb-4 h-16 w-16 animate-spin rounded-full border-4 border-[#E2D9C8] border-t-[#C8853F]" />
-          <p className="text-lg text-[#8A8A80]">Загрузка заказа...</p>
+      <main style={{ minHeight: "100vh", background: "#f5f7fa", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: 56, height: 56, borderRadius: "50%", border: "4px solid #e3e8ef", borderTopColor: "#8b9dc3", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+          <p style={{ fontSize: 16, color: "#a0aec0" }}>Загрузка заказа...</p>
         </div>
       </main>
     );
@@ -82,13 +91,10 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
 
   if (!order) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#F6F1E8]">
-        <div className="text-center">
-          <p className="mb-4 text-xl text-[#8A8A80]">Заказ не найден</p>
-          <Link
-            href="/menu"
-            className="rounded-full bg-[#C8853F] px-6 py-3 font-medium text-white transition hover:bg-[#A86B2C]"
-          >
+      <main style={{ minHeight: "100vh", background: "#f5f7fa", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center" }}>
+          <p style={{ fontSize: 20, color: "#a0aec0", marginBottom: 20 }}>Заказ не найден</p>
+          <Link href="/menu" style={{ background: "#8b9dc3", color: "#fff", padding: "12px 28px", borderRadius: 12, textDecoration: "none", fontWeight: 700 }}>
             Вернуться в меню
           </Link>
         </div>
@@ -100,174 +106,124 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
   const isActive = order.status !== "DELIVERED" && order.status !== "CANCELLED";
   const estimatedTime = new Date(order.readyAt);
 
+  const stages = [
+    { key: "NEW", label: "Принят", icon: "✓" },
+    { key: "CONFIRMED", label: "Подтверждён", icon: "✓" },
+    { key: "COOKING", label: "Готовится", icon: "🔥" },
+    { key: "READY", label: "Готов", icon: "✓" },
+    { key: "DELIVERING", label: "В пути", icon: "🚗" },
+    { key: "DELIVERED", label: "Доставлен", icon: "🎉" },
+  ];
+
   return (
-    <main className="min-h-screen bg-[#F6F1E8]">
-      <nav className="sticky top-0 z-50 border-b border-[#E2D9C8] bg-[#FBF7EF]/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-2xl font-bold">
-            <span className="text-[#C8853F]">◐</span> ЛУНА
+    <main style={{ minHeight: "100vh", background: "#f5f7fa" }}>
+      <header style={{ background: "#fff", borderBottom: "1px solid #e3e8ef", position: "sticky", top: 0, zIndex: 100 }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 16px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+            <span style={{ fontSize: 24 }}>🌙</span>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: "#E91E63", letterSpacing: 2 }}>LUNA</span>
           </Link>
-          <Link
-            href="/profile"
-            className="text-sm font-medium text-[#8A8A80] transition hover:text-[#C8853F]"
-          >
-            Мои заказы
-          </Link>
+          <Link href="/profile" style={{ fontSize: 14, color: "#a0aec0", textDecoration: "none", fontWeight: 600 }}>Мои заказы</Link>
         </div>
-      </nav>
+      </header>
 
-      <section className="px-6 py-12">
-        <div className="mx-auto max-w-4xl">
-          {/* Заголовок */}
-          <div className="mb-8 text-center">
-            <div className="mb-2 inline-block rounded-full bg-[#F0E3D0] px-4 py-1 text-sm font-medium text-[#C8853F]">
-              Заказ №{order.number}
-            </div>
-            <h1 className="mb-2 font-serif text-4xl font-bold text-[#1F2421]">
-              {currentStatus.label}
-            </h1>
-            {isActive && (
-              <p className="text-lg text-[#8A8A80]">
-                Ожидаемое время доставки:{" "}
-                <span className="font-medium text-[#1F2421]">
-                  {estimatedTime.toLocaleTimeString("ru-RU", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </p>
-            )}
-          </div>
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 16px" }}>
+        {/* Заголовок */}
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <span style={{ display: "inline-block", background: "#f0f3f7", color: "#8b9dc3", borderRadius: 20, padding: "4px 16px", fontSize: 13, fontWeight: 700, marginBottom: 12 }}>
+            Заказ №{order.number}
+          </span>
+          <h1 style={{ fontWeight: 800, fontSize: 32, color: "#2c3e50", marginBottom: 8 }}>{currentStatus.label}</h1>
+          {isActive && (
+            <p style={{ fontSize: 16, color: "#a0aec0" }}>
+              Ожидаемое время доставки:{" "}
+              <span style={{ fontWeight: 700, color: "#2c3e50" }}>
+                {estimatedTime.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            </p>
+          )}
+        </div>
 
-          {/* Трекинг */}
-          {order.status !== "CANCELLED" && (
-            <div className="mb-8 rounded-2xl border border-[#E2D9C8] bg-white p-8">
-              <div className="relative">
-                {/* Линия прогресса */}
-                <div className="absolute left-0 top-6 h-1 w-full bg-[#E2D9C8]">
-                  <div
-                    className="h-full bg-[#C8853F] transition-all duration-500"
-                    style={{
-                      width: `${(currentStatus.step / 6) * 100}%`,
-                    }}
-                  />
-                </div>
-
-                {/* Этапы */}
-                <div className="relative flex justify-between">
-                  {[
-                    { key: "NEW", label: "Принят", icon: "✓" },
-                    { key: "CONFIRMED", label: "Подтверждён", icon: "✓" },
-                    { key: "COOKING", label: "Готовится", icon: "🔥" },
-                    { key: "READY", label: "Готов", icon: "✓" },
-                    { key: "DELIVERING", label: "В пути", icon: "🚗" },
-                    { key: "DELIVERED", label: "Доставлен", icon: "🎉" },
-                  ].map((stage, index) => {
-                    const isPast = currentStatus.step > index + 1;
-                    const isCurrent = currentStatus.step === index + 1;
-                    const isFuture = currentStatus.step < index + 1;
-
-                    return (
-                      <div key={stage.key} className="flex flex-col items-center">
-                        <div
-                          className={`mb-3 flex h-12 w-12 items-center justify-center rounded-full text-xl transition ${
-                            isPast || isCurrent
-                              ? "bg-[#C8853F] text-white shadow-lg"
-                              : "bg-[#E2D9C8] text-[#8A8A80]"
-                          }`}
-                        >
-                          {stage.icon}
-                        </div>
-                        <span
-                          className={`text-center text-xs font-medium ${
-                            isPast || isCurrent ? "text-[#1F2421]" : "text-[#8A8A80]"
-                          }`}
-                        >
-                          {stage.label}
-                        </span>
+        {/* Трекинг */}
+        {order.status !== "CANCELLED" && (
+          <div style={cardS}>
+            <div style={{ position: "relative", padding: "8px 0" }}>
+              <div style={{ position: "absolute", left: 24, right: 24, top: 28, height: 4, background: "#e3e8ef", borderRadius: 4 }}>
+                <div style={{ height: "100%", background: "#8b9dc3", borderRadius: 4, transition: "width 0.5s", width: `${((currentStatus.step - 1) / 5) * 100}%` }} />
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", position: "relative" }}>
+                {stages.map((stage, index) => {
+                  const active = currentStatus.step >= index + 1;
+                  return (
+                    <div key={stage.key} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
+                      <div style={{
+                        width: 48, height: 48, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 18, marginBottom: 10, fontWeight: 700,
+                        background: active ? "#8b9dc3" : "#e3e8ef",
+                        color: active ? "#fff" : "#cbd5e0",
+                        boxShadow: active ? "0 2px 8px rgba(208,2,27,0.3)" : "none",
+                        transition: "all 0.3s",
+                      }}>
+                        {stage.icon}
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {order.status === "CANCELLED" && (
-            <div className="mb-8 rounded-2xl border border-[#E2D9C8] bg-[#F6F1E8] p-6 text-center">
-              <p className="text-lg text-[#8A8A80]">
-                Заказ отменён. Если у вас есть вопросы, свяжитесь с нами.
-              </p>
-            </div>
-          )}
-
-          {/* Адрес доставки */}
-          <div className="mb-8 rounded-2xl border border-[#E2D9C8] bg-white p-6">
-            <h2 className="mb-3 font-serif text-xl font-bold text-[#1F2421]">
-              Адрес доставки
-            </h2>
-            <p className="text-[#8A8A80]">{order.tableNumber}</p>
-          </div>
-
-          {/* Состав заказа */}
-          <div className="mb-8 rounded-2xl border border-[#E2D9C8] bg-white p-6">
-            <h2 className="mb-4 font-serif text-xl font-bold text-[#1F2421]">
-              Состав заказа
-            </h2>
-            <div className="space-y-4">
-              {order.lines.map((line) => (
-                <div key={line.id} className="flex items-center gap-4">
-                  <div className="h-16 w-16 overflow-hidden rounded-lg bg-[#F6F1E8]">
-                    {line.item.photo && (
-                      <img
-                        src={line.item.photo}
-                        alt={line.item.name}
-                        className="h-full w-full object-cover"
-                      />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-[#1F2421]">{line.item.name}</p>
-                    <p className="text-sm text-[#8A8A80]">
-                      {line.qty} × {line.price} ₽
-                    </p>
-                  </div>
-                  <span className="font-medium text-[#1F2421]">
-                    {line.qty * line.price} ₽
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-4 border-t border-[#E2D9C8] pt-4">
-              <div className="flex justify-between">
-                <span className="font-serif text-xl font-bold text-[#1F2421]">Итого</span>
-                <span className="font-serif text-xl font-bold text-[#1F2421]">
-                  {order.total} ₽
-                </span>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: active ? "#2c3e50" : "#cbd5e0", textAlign: "center" }}>
+                        {stage.label}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
+        )}
 
-          {/* Кнопки */}
-          <div className="flex gap-4">
-            <Link
-              href="/menu"
-              className="flex-1 rounded-full border border-[#C8853F] px-6 py-4 text-center font-medium text-[#C8853F] transition hover:bg-[#F0E3D0]"
-            >
-              Вернуться в меню
-            </Link>
-            {order.status === "DELIVERED" && (
-              <Link
-                href="/menu"
-                className="flex-1 rounded-full bg-[#C8853F] px-6 py-4 text-center font-medium text-white transition hover:bg-[#A86B2C]"
-              >
-                Заказать ещё раз
-              </Link>
-            )}
+        {order.status === "CANCELLED" && (
+          <div style={{ ...cardS, background: "#f0f3f7", textAlign: "center" }}>
+            <p style={{ fontSize: 16, color: "#8b9dc3", fontWeight: 600 }}>Заказ отменён. Если есть вопросы — свяжитесь с нами.</p>
+          </div>
+        )}
+
+        {/* Адрес */}
+        <div style={cardS}>
+          <h2 style={{ fontWeight: 700, fontSize: 18, color: "#2c3e50", marginBottom: 10 }}>Адрес доставки</h2>
+          <p style={{ fontSize: 15, color: "#a0aec0" }}>{order.tableNumber}</p>
+        </div>
+
+        {/* Состав */}
+        <div style={cardS}>
+          <h2 style={{ fontWeight: 700, fontSize: 18, color: "#2c3e50", marginBottom: 16 }}>Состав заказа</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {order.lines.map((line) => (
+              <div key={line.id} style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ width: 64, height: 64, borderRadius: 12, overflow: "hidden", background: "#f8f9fb", flexShrink: 0 }}>
+                  {line.item.photo && <img src={line.item.photo} alt={line.item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontWeight: 600, fontSize: 15, color: "#2c3e50", marginBottom: 4 }}>{line.item.name}</p>
+                  <p style={{ fontSize: 13, color: "#a0aec0" }}>{line.qty} × {line.price} ₽</p>
+                </div>
+                <span style={{ fontWeight: 700, fontSize: 15, color: "#2c3e50" }}>{line.qty * line.price} ₽</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #e3e8ef", display: "flex", justifyContent: "space-between" }}>
+            <span style={{ fontWeight: 800, fontSize: 18, color: "#2c3e50" }}>Итого</span>
+            <span style={{ fontWeight: 800, fontSize: 18, color: "#2c3e50" }}>{order.total} ₽</span>
           </div>
         </div>
-      </section>
+
+        {/* Кнопки */}
+        <div style={{ display: "flex", gap: 12 }}>
+          <Link href="/menu" style={{ flex: 1, border: "2px solid #8b9dc3", color: "#8b9dc3", padding: "14px 0", borderRadius: 12, textAlign: "center", fontWeight: 700, textDecoration: "none", fontSize: 15 }}>
+            Вернуться в меню
+          </Link>
+          {order.status === "DELIVERED" && (
+            <Link href="/menu" style={{ flex: 1, background: "#8b9dc3", color: "#fff", padding: "14px 0", borderRadius: 12, textAlign: "center", fontWeight: 700, textDecoration: "none", fontSize: 15 }}>
+              Заказать ещё раз
+            </Link>
+          )}
+        </div>
+      </div>
     </main>
   );
 }

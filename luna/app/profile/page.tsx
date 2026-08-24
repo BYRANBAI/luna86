@@ -94,246 +94,160 @@ export default function ProfilePage() {
     router.push("/auth");
   };
 
+  const cardS: React.CSSProperties = { background: "#fff", borderRadius: 16, padding: 24, marginBottom: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.07)" };
+
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#F6F1E8]">
-        <div className="text-center">
-          <div className="mb-4 h-16 w-16 animate-spin rounded-full border-4 border-[#E2D9C8] border-t-[#C8853F]" />
-          <p className="text-lg text-[#8A8A80]">Загрузка профиля...</p>
+      <main style={{ minHeight: "100vh", background: "#f5f7fa", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: 56, height: 56, borderRadius: "50%", border: "4px solid #F0F0F0", borderTopColor: "#8b9dc3", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+          <p style={{ fontSize: 16, color: "#a0aec0" }}>Загрузка профиля...</p>
         </div>
       </main>
     );
   }
 
-  if (!guest) {
-    return null;
-  }
+  if (!guest) return null;
 
   const statusLabels: Record<string, string> = {
-    NEW: "Принят",
-    CONFIRMED: "Подтверждён",
-    COOKING: "Готовится",
-    READY: "Готов",
-    DELIVERING: "В пути",
-    DELIVERED: "Доставлен",
-    CANCELLED: "Отменён",
+    NEW: "Принят", CONFIRMED: "Подтверждён", COOKING: "Готовится",
+    READY: "Готов", DELIVERING: "В пути", DELIVERED: "Доставлен", CANCELLED: "Отменён",
   };
 
+  const statusColors: Record<string, string> = {
+    NEW: "#8b9dc3", CONFIRMED: "#8b9dc3", COOKING: "#FF6B00",
+    READY: "#22C55E", DELIVERING: "#3B82F6", DELIVERED: "#2c3e50", CANCELLED: "#999",
+  };
+
+  const tabs = [
+    { key: "orders", label: `Мои заказы (${orders.length})` },
+    { key: "bonuses", label: "История бонусов" },
+    { key: "addresses", label: `Адреса (${addresses.length})` },
+  ] as const;
+
   return (
-    <main className="min-h-screen bg-[#F6F1E8]">
-      <nav className="sticky top-0 z-50 border-b border-[#E2D9C8] bg-[#FBF7EF]/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-2xl font-bold">
-            <span className="text-[#C8853F]">◐</span> ЛУНА
+    <main style={{ minHeight: "100vh", background: "#f5f7fa" }}>
+      <header style={{ background: "#fff", borderBottom: "1px solid #e3e8ef", position: "sticky", top: 0, zIndex: 100 }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 16px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+            <span style={{ fontSize: 24 }}>🌙</span>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: "#E91E63", letterSpacing: 2 }}>LUNA</span>
           </Link>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/menu"
-              className="text-sm font-medium text-[#8A8A80] transition hover:text-[#C8853F]"
-            >
-              Меню
-            </Link>
-            <button
-              onClick={logout}
-              className="text-sm font-medium text-[#8A8A80] transition hover:text-[#C8853F]"
-            >
-              Выйти
-            </button>
+          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+            <Link href="/menu" style={{ fontSize: 14, fontWeight: 600, color: "#a0aec0", textDecoration: "none" }}>Меню</Link>
+            <button onClick={logout} style={{ fontSize: 14, fontWeight: 600, color: "#8b9dc3", background: "none", border: "none", cursor: "pointer" }}>Выйти</button>
           </div>
         </div>
-      </nav>
+      </header>
 
-      <section className="px-6 py-12">
-        <div className="mx-auto max-w-7xl">
-          {/* Шапка профиля */}
-          <div className="mb-8 rounded-2xl border border-[#E2D9C8] bg-gradient-to-br from-[#FBF7EF] to-[#F0E3D0] p-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="mb-2 font-serif text-4xl font-bold text-[#1F2421]">
-                  {guest.name}
-                </h1>
-                <p className="mb-1 text-lg text-[#8A8A80]">{guest.phone}</p>
-                {guest.email && <p className="text-[#8A8A80]">{guest.email}</p>}
-              </div>
-              <div className="text-right">
-                <div className="mb-2 rounded-full bg-[#C8853F] px-4 py-1 text-sm font-medium text-white">
-                  {guest.segment}
-                </div>
-                <div className="rounded-2xl border border-[#C8853F] bg-white px-6 py-4">
-                  <p className="mb-1 text-sm text-[#8A8A80]">Бонусов</p>
-                  <p className="font-serif text-3xl font-bold text-[#C8853F]">
-                    {guest.bonuses}
-                  </p>
-                </div>
-              </div>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 16px" }}>
+        {/* Шапка */}
+        <div style={{ background: "#8b9dc3", borderRadius: 20, padding: "28px 32px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 20 }}>
+          <div>
+            <h1 style={{ fontWeight: 800, fontSize: 28, color: "#fff", marginBottom: 6 }}>{guest.name}</h1>
+            <p style={{ fontSize: 15, color: "rgba(255,255,255,0.75)", marginBottom: 2 }}>{guest.phone}</p>
+            {guest.email && <p style={{ fontSize: 14, color: "rgba(255,255,255,0.6)" }}>{guest.email}</p>}
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ display: "inline-block", background: "rgba(255,255,255,0.2)", borderRadius: 10, padding: "4px 14px", fontSize: 13, color: "#fff", fontWeight: 700, marginBottom: 12 }}>
+              {guest.segment}
+            </div>
+            <div style={{ background: "#fff", borderRadius: 14, padding: "14px 24px", textAlign: "center" }}>
+              <p style={{ fontSize: 12, color: "#a0aec0", marginBottom: 4 }}>Бонусы</p>
+              <p style={{ fontWeight: 800, fontSize: 28, color: "#8b9dc3" }}>{guest.bonuses}</p>
             </div>
           </div>
+        </div>
 
-          {/* Табы */}
-          <div className="mb-6 flex gap-2 overflow-x-auto">
-            <button
-              onClick={() => setActiveTab("orders")}
-              className={`whitespace-nowrap rounded-full px-6 py-3 text-sm font-medium transition ${
-                activeTab === "orders"
-                  ? "bg-[#C8853F] text-white"
-                  : "bg-white text-[#1F2421] hover:bg-[#F0E3D0]"
-              }`}
-            >
-              Мои заказы ({orders.length})
+        {/* Табы */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 20, background: "#fff", borderRadius: 14, padding: 6, boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+          {tabs.map(tab => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+              style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "none", fontWeight: 700, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap",
+                background: activeTab === tab.key ? "#8b9dc3" : "transparent",
+                color: activeTab === tab.key ? "#fff" : "#a0aec0" }}>
+              {tab.label}
             </button>
-            <button
-              onClick={() => setActiveTab("bonuses")}
-              className={`whitespace-nowrap rounded-full px-6 py-3 text-sm font-medium transition ${
-                activeTab === "bonuses"
-                  ? "bg-[#C8853F] text-white"
-                  : "bg-white text-[#1F2421] hover:bg-[#F0E3D0]"
-              }`}
-            >
-              История бонусов
-            </button>
-            <button
-              onClick={() => setActiveTab("addresses")}
-              className={`whitespace-nowrap rounded-full px-6 py-3 text-sm font-medium transition ${
-                activeTab === "addresses"
-                  ? "bg-[#C8853F] text-white"
-                  : "bg-white text-[#1F2421] hover:bg-[#F0E3D0]"
-              }`}
-            >
-              Адреса ({addresses.length})
-            </button>
-          </div>
+          ))}
+        </div>
 
-          {/* Контент вкладок */}
-          {activeTab === "orders" && (
-            <div className="space-y-4">
-              {orders.length === 0 ? (
-                <div className="rounded-2xl border border-[#E2D9C8] bg-white p-12 text-center">
-                  <p className="mb-4 text-lg text-[#8A8A80]">У вас пока нет заказов</p>
-                  <Link
-                    href="/menu"
-                    className="inline-block rounded-full bg-[#C8853F] px-6 py-3 font-medium text-white transition hover:bg-[#A86B2C]"
-                  >
-                    Перейти в меню
-                  </Link>
-                </div>
-              ) : (
-                orders.map((order) => (
-                  <Link
-                    key={order.id}
-                    href={`/orders/${order.id}`}
-                    className="block rounded-2xl border border-[#E2D9C8] bg-white p-6 transition hover:shadow-lg"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="rounded-full bg-[#F0E3D0] px-4 py-2">
-                          <span className="font-serif text-lg font-bold text-[#C8853F]">
-                            №{order.number}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="mb-1 font-medium text-[#1F2421]">
-                            {statusLabels[order.status] || order.status}
-                          </p>
-                          <p className="text-sm text-[#8A8A80]">
-                            {new Date(order.createdAt).toLocaleDateString("ru-RU", {
-                              day: "numeric",
-                              month: "long",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-serif text-2xl font-bold text-[#1F2421]">
-                          {order.total} ₽
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
-          )}
-
-          {activeTab === "bonuses" && (
-            <div className="space-y-4">
-              {bonusHistory.length === 0 ? (
-                <div className="rounded-2xl border border-[#E2D9C8] bg-white p-12 text-center">
-                  <p className="text-lg text-[#8A8A80]">История бонусов пуста</p>
-                </div>
-              ) : (
-                bonusHistory.map((tx) => (
-                  <div
-                    key={tx.id}
-                    className="rounded-2xl border border-[#E2D9C8] bg-white p-6"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="mb-1 font-medium text-[#1F2421]">{tx.reason}</p>
-                        <p className="text-sm text-[#8A8A80]">
-                          {new Date(tx.createdAt).toLocaleDateString("ru-RU", {
-                            day: "numeric",
-                            month: "long",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                      </div>
-                      <div>
-                        <span
-                          className={`font-serif text-2xl font-bold ${
-                            tx.amount > 0 ? "text-[#C8853F]" : "text-[#8A8A80]"
-                          }`}
-                        >
-                          {tx.amount > 0 ? "+" : ""}
-                          {tx.amount}
-                        </span>
-                      </div>
-                    </div>
+        {/* Заказы */}
+        {activeTab === "orders" && (
+          <div>
+            {orders.length === 0 ? (
+              <div style={{ ...cardS, padding: 48, textAlign: "center" }}>
+                <p style={{ fontSize: 16, color: "#a0aec0", marginBottom: 20 }}>У вас пока нет заказов</p>
+                <Link href="/menu" style={{ background: "#8b9dc3", color: "#fff", padding: "12px 28px", borderRadius: 12, textDecoration: "none", fontWeight: 700 }}>
+                  Перейти в меню
+                </Link>
+              </div>
+            ) : orders.map(order => (
+              <Link key={order.id} href={`/orders/${order.id}`} style={{ ...cardS, display: "flex", alignItems: "center", justifyContent: "space-between", textDecoration: "none", gap: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <div style={{ background: "#f0f3f7", borderRadius: 10, padding: "8px 14px" }}>
+                    <span style={{ fontWeight: 800, fontSize: 15, color: "#8b9dc3" }}>№{order.number}</span>
                   </div>
-                ))
-              )}
-            </div>
-          )}
-
-          {activeTab === "addresses" && (
-            <div className="space-y-4">
-              {addresses.length === 0 ? (
-                <div className="rounded-2xl border border-[#E2D9C8] bg-white p-12 text-center">
-                  <p className="mb-4 text-lg text-[#8A8A80]">У вас нет сохранённых адресов</p>
-                  <Link
-                    href="/checkout"
-                    className="inline-block rounded-full bg-[#C8853F] px-6 py-3 font-medium text-white transition hover:bg-[#A86B2C]"
-                  >
-                    Добавить адрес
-                  </Link>
-                </div>
-              ) : (
-                addresses.map((addr) => (
-                  <div
-                    key={addr.id}
-                    className="rounded-2xl border border-[#E2D9C8] bg-white p-6"
-                  >
-                    <div className="mb-2 flex items-center gap-2">
-                      <span className="font-medium text-[#1F2421]">{addr.label}</span>
-                      {addr.isDefault && (
-                        <span className="rounded-full bg-[#C8853F] px-2 py-0.5 text-xs text-white">
-                          По умолчанию
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[#8A8A80]">
-                      {addr.street}, {addr.building}
-                      {addr.apartment && `, кв. ${addr.apartment}`}
+                  <div>
+                    <p style={{ fontWeight: 700, fontSize: 15, color: "#2c3e50", marginBottom: 4 }}>
+                      <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: statusColors[order.status] ?? "#a0aec0", marginRight: 6 }} />
+                      {statusLabels[order.status] || order.status}
+                    </p>
+                    <p style={{ fontSize: 13, color: "#a0aec0" }}>
+                      {new Date(order.createdAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
                     </p>
                   </div>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-      </section>
+                </div>
+                <span style={{ fontWeight: 800, fontSize: 20, color: "#2c3e50" }}>{order.total} ₽</span>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {/* Бонусы */}
+        {activeTab === "bonuses" && (
+          <div>
+            {bonusHistory.length === 0 ? (
+              <div style={{ ...cardS, padding: 48, textAlign: "center" }}>
+                <p style={{ fontSize: 16, color: "#a0aec0" }}>История бонусов пуста</p>
+              </div>
+            ) : bonusHistory.map(tx => (
+              <div key={tx.id} style={{ ...cardS, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+                <div>
+                  <p style={{ fontWeight: 600, fontSize: 15, color: "#2c3e50", marginBottom: 4 }}>{tx.reason}</p>
+                  <p style={{ fontSize: 13, color: "#a0aec0" }}>
+                    {new Date(tx.createdAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+                <span style={{ fontWeight: 800, fontSize: 22, color: tx.amount > 0 ? "#22C55E" : "#8b9dc3" }}>
+                  {tx.amount > 0 ? "+" : ""}{tx.amount}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Адреса */}
+        {activeTab === "addresses" && (
+          <div>
+            {addresses.length === 0 ? (
+              <div style={{ ...cardS, padding: 48, textAlign: "center" }}>
+                <p style={{ fontSize: 16, color: "#a0aec0", marginBottom: 20 }}>Нет сохранённых адресов</p>
+                <Link href="/checkout" style={{ background: "#8b9dc3", color: "#fff", padding: "12px 28px", borderRadius: 12, textDecoration: "none", fontWeight: 700 }}>
+                  Добавить адрес
+                </Link>
+              </div>
+            ) : addresses.map(addr => (
+              <div key={addr.id} style={cardS}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                  <span style={{ fontWeight: 700, fontSize: 15, color: "#2c3e50" }}>{addr.label}</span>
+                  {addr.isDefault && <span style={{ background: "#8b9dc3", color: "#fff", fontSize: 11, padding: "2px 8px", borderRadius: 6, fontWeight: 700 }}>По умолчанию</span>}
+                </div>
+                <p style={{ fontSize: 14, color: "#a0aec0" }}>{addr.street}, {addr.building}{addr.apartment && `, кв. ${addr.apartment}`}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </main>
   );
 }

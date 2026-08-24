@@ -12,7 +12,7 @@ const sectionFor = (entity: string) => ({
   finance: "finance", purchaseRequest: "stock", guestBonus: "guests",
   deliveryStatus: "delivery", assignCourier: "delivery", user: "staff", timeEntry: "staff", cashCollection: "shifts",
   xReport: "shifts", hall: "hall", table: "hall", guestMerge: "guests",
-  reservationStatus: "hall",
+  reservationStatus: "hall", siteItem: "site", siteSetting: "site",
 }[entity] ?? "dashboard");
 
 async function guard(entity = "dashboard") {
@@ -178,11 +178,11 @@ export async function PATCH(req: Request) {
   const user = auth.user!;
   const entity = String(body.entity);
   let result: unknown;
-  if (entity === "item") result = await db.item.update({ where: { id: Number(body.id) }, data: { name: body.name?.trim(), description: body.description, price: Number(body.price), dineInPrice: Number(body.dineInPrice ?? body.price), deliveryPrice: Number(body.deliveryPrice ?? body.price), pickupPrice: Number(body.pickupPrice ?? body.price), allergens: body.allergens, nutrition: body.nutrition, calories: body.calories ? Number(body.calories) : null, dailyLimit: body.dailyLimit ? Number(body.dailyLimit) : null, active: body.active, site: body.site, app: body.app, kiosk: body.kiosk, bot: body.bot, labels: body.labels, cookingMinutes: Number(body.cookingMinutes ?? 12), workshop: body.workshop } });
+  if (entity === "item") result = await db.item.update({ where: { id: Number(body.id) }, data: { name: body.name?.trim(), description: body.description, price: Number(body.price), dineInPrice: Number(body.dineInPrice ?? body.price), deliveryPrice: Number(body.deliveryPrice ?? body.price), pickupPrice: Number(body.pickupPrice ?? body.price), photo: body.photo ?? undefined, allergens: body.allergens, nutrition: body.nutrition, calories: body.calories ? Number(body.calories) : null, dailyLimit: body.dailyLimit ? Number(body.dailyLimit) : null, active: body.active, site: body.site, app: body.app, kiosk: body.kiosk, bot: body.bot, labels: body.labels, cookingMinutes: Number(body.cookingMinutes ?? 12), workshop: body.workshop } });
   else if (entity === "category") result = await db.category.update({ where: { id: Number(body.id) }, data: { name: body.name?.trim(), active: body.active } });
   else if (entity === "supplier") result = await db.supplier.update({ where: { id: Number(body.id) }, data: { name: body.name, phone: body.phone, email: body.email, note: body.note, priceList: body.priceList } });
   else if (entity === "courier") result = await db.courier.update({ where: { id: Number(body.id) }, data: { name: body.name, phone: body.phone, status: body.status } });
-  else if (entity === "guest") result = await db.guest.update({ where: { id: Number(body.id) }, data: { name: body.name, phone: body.phone, tags: body.tags, bonuses: body.bonuses === undefined ? undefined : Number(body.bonuses) } });
+  else if (entity === "guest") result = await db.guest.update({ where: { id: Number(body.id) }, data: { name: body.name, phone: body.phone, email: body.email, tags: body.tags, segment: body.segment, bonuses: body.bonuses === undefined ? undefined : Number(body.bonuses) } });
   else if (entity === "zone") result = await db.deliveryZone.update({ where: { id: Number(body.id) }, data: { name: body.name, minOrder: Number(body.minOrder), fee: Number(body.fee), eta: Number(body.eta), addresses: body.addresses } });
   else if (entity === "reservation") result = await db.reservation.update({ where: { id: Number(body.id) }, data: { date: body.date ? new Date(body.date) : undefined, guestName: body.guestName, phone: body.phone, guests: body.guests ? Number(body.guests) : undefined, status: body.status, tableId: body.tableId ? Number(body.tableId) : null } });
   else if (entity === "setting") result = await db.setting.update({ where: { key: body.key }, data: { value: String(body.value) } });

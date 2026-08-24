@@ -13,8 +13,8 @@ export const CreateOrderSchema = z.object({
   bonus: z.number().min(0).optional(),
   deliveryFee: z.number().min(0).optional(),
   paymentType: z.string().optional(),
-  modifiers: z.record(z.number()).optional(),
-  modifierNames: z.record(z.string()).optional(),
+  modifiers: z.record(z.string(), z.number()).optional(),
+  modifierNames: z.record(z.string(), z.string()).optional(),
   payments: z.array(z.object({
     type: z.string(),
     amount: z.number().min(0)
@@ -87,7 +87,7 @@ export function validateData<T>(schema: z.ZodSchema<T>, data: unknown): { succes
     return { success: true, data: validated };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const messages = error.errors.map(e => `${e.path.join(".")}: ${e.message}`).join(", ");
+      const messages = error.issues.map((e: any) => `${e.path.join(".")}: ${e.message}`).join(", ");
       return { success: false, error: messages };
     }
     return { success: false, error: "Ошибка валидации" };

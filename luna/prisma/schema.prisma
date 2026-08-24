@@ -54,6 +54,18 @@ model Item {
   modifierGroups ModifierGroup[]
   schedules ItemSchedule[]
   recipeVersions RecipeVersion[]
+  reviews Review[]
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String   @default("")
+  itemId    Int
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  guestId   Int
+  guest     Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
 
 model Modifier {
@@ -119,6 +131,7 @@ model Guest {
   addresses GuestAddress[]
   favorites GuestFavorite[]
   bonusHistory BonusTransaction[]
+  reviews Review[]
 }
 
 model Order {

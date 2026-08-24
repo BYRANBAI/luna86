@@ -7,13 +7,13 @@ import { useEffect, useState } from "react";
 const sections = [
   ["dashboard", "Дашборд"], ["menu", "Меню"], ["recipes", "Техкарты"], ["stock", "Склад"],
   ["suppliers", "Поставщики"], ["orders", "Заказы"], ["delivery", "Доставка"], ["guests", "Гости"],
-  ["loyalty", "Лояльность"], ["hall", "Зал и брони"], ["staff", "Сотрудники"], ["reports", "Отчёты"],
-  ["finance", "Финансы"], ["settings", "Настройки"], ["audit", "Журнал действий"],
+  ["clients", "Клиенты"], ["site", "Редактор сайта"], ["loyalty", "Лояльность"], ["hall", "Зал и брони"], ["staff", "Сотрудники"],
+  ["reports", "Отчёты"], ["finance", "Финансы"], ["settings", "Настройки"], ["audit", "Журнал действий"],
 ];
 const roles: Record<string, string[]> = {
   Владелец: sections.map(x => x[0]), Управляющий: sections.map(x => x[0]),
   Кассир: ["dashboard", "orders", "guests", "hall"], Повар: ["dashboard", "recipes"],
-  Кладовщик: ["dashboard", "stock", "suppliers"], Маркетолог: ["dashboard", "guests", "loyalty", "reports"],
+  Кладовщик: ["dashboard", "stock", "suppliers"], Маркетолог: ["dashboard", "guests", "loyalty", "reports", "clients"],
 };
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {

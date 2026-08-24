@@ -13,6 +13,11 @@ const RegisterSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const rawPhone = String(body.phone ?? "").trim();
+    const digits = rawPhone.replace(/\D/g, "");
+    if (digits.length === 11 && digits.startsWith("8")) body.phone = "+7" + digits.slice(1);
+    else if (digits.length === 11 && digits.startsWith("7")) body.phone = "+" + digits;
+    else if (digits.length === 10) body.phone = "+7" + digits;
     const validated = RegisterSchema.parse(body);
 
     // Проверяем, существует ли уже гость с таким телефоном
@@ -79,7 +84,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: error.errors[0].message },
+        { error: error.issues[0].message },
         { status: 400 }
       );
     }

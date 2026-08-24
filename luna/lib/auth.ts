@@ -158,12 +158,12 @@ export function createSession(userId: number) {
 }
 
 export const roleSections: Record<string, string[]> = {
-  Владелец: ["dashboard", "menu", "recipes", "stock", "suppliers", "orders", "delivery", "guests", "loyalty", "hall", "staff", "shifts", "reports", "finance", "settings", "audit"],
-  Управляющий: ["dashboard", "menu", "recipes", "stock", "suppliers", "orders", "delivery", "guests", "loyalty", "hall", "staff", "shifts", "reports", "finance", "settings", "audit"],
+  Владелец: ["dashboard", "menu", "recipes", "stock", "suppliers", "orders", "delivery", "guests", "clients", "site", "loyalty", "hall", "staff", "shifts", "reports", "finance", "settings", "audit"],
+  Управляющий: ["dashboard", "menu", "recipes", "stock", "suppliers", "orders", "delivery", "guests", "clients", "site", "loyalty", "hall", "staff", "shifts", "reports", "finance", "settings", "audit"],
   Кассир: ["dashboard", "orders", "guests", "hall", "shifts"],
   Повар: ["dashboard", "recipes"],
   Кладовщик: ["dashboard", "stock", "suppliers"],
-  Маркетолог: ["dashboard", "guests", "loyalty", "reports"],
+  Маркетолог: ["dashboard", "guests", "clients", "site", "loyalty", "reports"],
 };
 
 export function canAccess(role: string, section: string) {

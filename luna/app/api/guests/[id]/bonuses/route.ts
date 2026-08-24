@@ -4,7 +4,7 @@ import { verifyAccessToken } from "@/lib/auth";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = req.headers.get("Authorization");
@@ -18,7 +18,8 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const guestId = parseInt(params.id);
+    const { id } = await params;
+    const guestId = parseInt(id);
     if (payload.userId !== guestId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
