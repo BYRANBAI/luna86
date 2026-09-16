@@ -37,6 +37,7 @@ prisma/**/*.db-journal
 prisma/**/*.db-wal
 prisma/**/*.db-shm
 *.log
+/public/uploads/1789520095260-kg3dzzfiprd.png
 
 # vercel
 .vercel
