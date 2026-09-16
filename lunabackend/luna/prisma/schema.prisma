@@ -1,0 +1,482 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Для production используйте PostgreSQL:
+// datasource db {
+//   provider = "postgresql"
+//   url      = env("DATABASE_URL")
+// }
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String
+  color String @default("#d8b45b")
+  sort  Int    @default(0)
+  active Boolean @default(true)
+  items Item[]
+}
+
+model Item {
+  id         Int      @id @default(autoincrement())
+  name       String
+  description String
+  price      Int
+  cost       Int
+  stock      Int      @default(20)
+  dailyLimit Int?
+  soldToday  Int      @default(0)
+  cookingMinutes Int  @default(12)
+  workshop   String   @default("горячий")
+  labels     String   @default("")
+  site       Boolean  @default(true)
+  app        Boolean  @default(true)
+  kiosk      Boolean  @default(true)
+  bot        Boolean  @default(true)
+  dineInPrice Int?
+  deliveryPrice Int?
+  pickupPrice Int?
+  allergens String @default("")
+  nutrition String @default("")
+  calories Int?
+  photo String @default("")
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+  active     Boolean  @default(true)
+  orderLines OrderLine[]
+  ingredients RecipeIngredient[]
+  modifiers Modifier[]
+  modifierGroups ModifierGroup[]
+  schedules ItemSchedule[]
+  recipeVersions RecipeVersion[]
+  reviews Review[]
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String   @default("")
+  itemId    Int
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  guestId   Int
+  guest     Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Modifier {
+  id Int @id @default(autoincrement())
+  name String
+  price Int @default(0)
+  itemId Int
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+}
+
+model Ingredient {
+  id Int @id @default(autoincrement())
+  name String
+  unit String @default("г")
+  stock Float @default(0)
+  costPerUnit Float @default(1)
+  minStock Float @default(0)
+  recipe RecipeIngredient[]
+  movements StockMovement[]
+  purchaseRequests PurchaseRequest[]
+}
+
+model RecipeIngredient {
+  id Int @id @default(autoincrement())
+  grams Float
+  ingredientId Int
+  itemId Int
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+}
+
+model StockMovement {
+  id Int @id @default(autoincrement())
+  type String
+  quantity Float
+  reason String?
+  price Float?
+  createdAt DateTime @default(now())
+  ingredientId Int
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+  orderId Int?
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  supplierId Int?
+  supplier Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+}
+
+model Guest {
+  id      Int     @id @default(autoincrement())
+  name    String
+  phone   String  @unique
+  email   String?
+  bonuses Int     @default(0)
+  orders  Order[]
+  gender String @default("")
+  birthday Int?
+  tags String @default("")
+  passwordHash String?
+  refreshToken String?
+  registered Boolean @default(false)
+  segment String @default("Новые")
+  lastVisit DateTime?
+  createdAt DateTime @default(now())
+  addresses GuestAddress[]
+  favorites GuestFavorite[]
+  bonusHistory BonusTransaction[]
+  reviews Review[]
+}
+
+model Order {
+  id        Int      @id @default(autoincrement())
+  number    String
+  source    String
+  status    String   @default("NEW")
+  total     Int
+  discount  Int       @default(0)
+  guestId   Int?
+  guest     Guest?   @relation(fields: [guestId], references: [id])
+  employeeId Int?
+  employee User? @relation("OrderEmployee", fields: [employeeId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  lines     OrderLine[]
+  payments Payment[]
+  stockMovements StockMovement[]
+  tableNumber String?
+  readyAt DateTime?
+  courierId Int?
+  courier Courier? @relation(fields: [courierId], references: [id], onDelete: SetNull)
+  reservationId Int?
+  reservation Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  statusHistory OrderStatusHistory[]
+  cancellations OrderCancellation[]
+}
+
+model OrderLine {
+  id      Int   @id @default(autoincrement())
+  qty     Int
+  price   Int
+  orderId Int
+  itemId  Int
+  order   Order @relation(fields: [orderId], references: [id])
+  item    Item  @relation(fields: [itemId], references: [id])
+  modifiers String @default("")
+  status String @default("NEW")
+}
+
+model Payment {
+  id Int @id @default(autoincrement())
+  type String
+  amount Int
+  orderId Int
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Expense {
+  id Int @id @default(autoincrement())
+  category String
+  amount Int
+  note String
+  createdAt DateTime @default(now())
+}
+
+model DeliveryZone {
+  id Int @id @default(autoincrement())
+  name String
+  minOrder Int
+  fee Int
+  eta Int
+  addresses String @default("")
+}
+
+model User {
+  id Int @id @default(autoincrement())
+  login String @unique
+  name String
+  role String
+  passwordHash String
+  pin String @default("")
+  active Boolean @default(true)
+  payType String @default("Почасовая")
+  baseSalary Int @default(0)
+  hourlyRate Int @default(350)
+  revenuePercent Float @default(1)
+  bonusPercent Float @default(2)
+  averageCheckPlan Int @default(500)
+  auditLogs AuditLog[]
+  shifts Shift[]
+  timeEntries TimeEntry[]
+  orders Order[] @relation("OrderEmployee")
+}
+
+model Supplier {
+  id Int @id @default(autoincrement())
+  name String
+  phone String @default("")
+  email String @default("")
+  note String @default("")
+  priceList String @default("")
+  active Boolean @default(true)
+  movements StockMovement[]
+}
+
+model Hall {
+  id Int @id @default(autoincrement())
+  name String
+  tables DiningTable[]
+  reservations Reservation[]
+}
+
+model DiningTable {
+  id Int @id @default(autoincrement())
+  number String
+  seats Int @default(2)
+  x Int @default(0)
+  y Int @default(0)
+  hallId Int
+  hall Hall @relation(fields: [hallId], references: [id], onDelete: Cascade)
+  reservations Reservation[]
+}
+
+model Reservation {
+  id Int @id @default(autoincrement())
+  date DateTime
+  guestName String
+  phone String @default("")
+  guests Int @default(1)
+  status String @default("Новая")
+  note String @default("")
+  hallId Int
+  hall Hall @relation(fields: [hallId], references: [id], onDelete: Cascade)
+  tableId Int?
+  table DiningTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  orders Order[]
+}
+
+model Courier {
+  id Int @id @default(autoincrement())
+  name String
+  phone String
+  status String @default("Свободен")
+  orders Order[]
+}
+
+model Promotion {
+  id Int @id @default(autoincrement())
+  name String
+  condition String
+  action String
+  active Boolean @default(true)
+  startsAt DateTime?
+  endsAt DateTime?
+}
+
+model Promocode {
+  id Int @id @default(autoincrement())
+  code String @unique
+  discount Int @default(0)
+  usageLimit Int?
+  used Int @default(0)
+  active Boolean @default(true)
+  expiresAt DateTime?
+}
+
+model Campaign {
+  id Int @id @default(autoincrement())
+  name String
+  segment String
+  channel String
+  status String @default("Черновик")
+  sent Int @default(0)
+  delivered Int @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Shift {
+  id Int @id @default(autoincrement())
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+  openedAt DateTime @default(now())
+  closedAt DateTime?
+  openingCash Int @default(0)
+  closingCash Int?
+  zReport String?
+  xReport String?
+  cashCollection Int @default(0)
+}
+
+model TimeEntry {
+  id Int @id @default(autoincrement())
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+  startedAt DateTime @default(now())
+  endedAt DateTime?
+  note String @default("")
+}
+
+model AuditLog {
+  id Int @id @default(autoincrement())
+  userId Int?
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  section String
+  action String
+  entity String
+  entityId Int?
+  details String @default("")
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  id Int @id @default(autoincrement())
+  key String @unique
+  value String
+  section String @default("Общие")
+  secret Boolean @default(false)
+}
+
+model ModifierGroup {
+  id Int @id @default(autoincrement())
+  name String
+  min Int @default(0)
+  max Int @default(1)
+  itemId Int
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  options ModifierOption[]
+}
+
+model ModifierOption {
+  id Int @id @default(autoincrement())
+  name String
+  price Int @default(0)
+  groupId Int
+  group ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+}
+
+model ItemSchedule {
+  id Int @id @default(autoincrement())
+  itemId Int
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  days String
+  startHour Int @default(0)
+  endHour Int @default(24)
+  active Boolean @default(true)
+}
+
+model RecipeVersion {
+  id Int @id @default(autoincrement())
+  itemId Int
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  version Int
+  note String @default("")
+  snapshot String
+  createdAt DateTime @default(now())
+}
+
+model OrderStatusHistory {
+  id Int @id @default(autoincrement())
+  orderId Int
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status String
+  note String @default("")
+  createdAt DateTime @default(now())
+}
+
+model OrderCancellation {
+  id Int @id @default(autoincrement())
+  orderId Int
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  lineId Int?
+  reason String
+  refundedStock Boolean @default(false)
+  createdAt DateTime @default(now())
+}
+
+model BonusRule {
+  id Int @id @default(autoincrement())
+  name String
+  earnPercent Int @default(5)
+  redeemLimit Int @default(50)
+  expiryDays Int @default(365)
+  active Boolean @default(true)
+}
+
+model Combo {
+  id Int @id @default(autoincrement())
+  name String
+  itemIds String
+  price Int
+  active Boolean @default(true)
+}
+
+model FinancialTransaction {
+  id Int @id @default(autoincrement())
+  type String
+  category String
+  amount Int
+  note String @default("")
+  createdAt DateTime @default(now())
+}
+
+model PurchaseRequest {
+  id Int @id @default(autoincrement())
+  ingredientId Int
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+  quantity Float
+  status String @default("Черновик")
+  createdAt DateTime @default(now())
+}
+
+model IdempotencyKey {
+  id String @id
+  response String
+  statusCode Int @default(200)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
+model GuestAddress {
+  id Int @id @default(autoincrement())
+  guestId Int
+  guest Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  label String
+  street String
+  building String
+  apartment String @default("")
+  entrance String @default("")
+  floor String @default("")
+  intercom String @default("")
+  comment String @default("")
+  lat Float?
+  lng Float?
+  isDefault Boolean @default(false)
+  createdAt DateTime @default(now())
+}
+
+model GuestFavorite {
+  id Int @id @default(autoincrement())
+  guestId Int
+  guest Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  itemId Int
+  createdAt DateTime @default(now())
+  @@unique([guestId, itemId])
+}
+
+model BonusTransaction {
+  id Int @id @default(autoincrement())
+  guestId Int
+  guest Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  amount Int
+  type String
+  reason String
+  orderId Int?
+  createdAt DateTime @default(now())
+}

@@ -1,0 +1,45 @@
+model GuestAddress {
+  id Int @id @default(autoincrement())
+  guestId Int
+  guest Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  label String
+  street String
+  building String
+  apartment String @default("")
+  entrance String @default("")
+  floor String @default("")
+  intercom String @default("")
+  comment String @default("")
+  lat Float?
+  lng Float?
+  isDefault Boolean @default(false)
+  createdAt DateTime @default(now())
+}
+
+model GuestFavorite {
+  id Int @id @default(autoincrement())
+  guestId Int
+  guest Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  itemId Int
+  createdAt DateTime @default(now())
+  @@unique([guestId, itemId])
+}
+
+model BonusTransaction {
+  id Int @id @default(autoincrement())
+  guestId Int
+  guest Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  amount Int
+  type String
+  reason String
+  orderId Int?
+  createdAt DateTime @default(now())
+}
+
+model IdempotencyKey {
+  id Int @id @default(autoincrement())
+  key String @unique
+  response String
+  createdAt DateTime @default(now())
+  @@index([createdAt])
+}

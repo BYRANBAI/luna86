@@ -1,0 +1,143 @@
+.page {
+  --nav-height: calc(60px + env(safe-area-inset-bottom, 0px));
+  min-width: 0;
+  padding-bottom: calc(var(--nav-height) + 150px);
+}
+
+.page *,
+.page *::before,
+.page *::after {
+  box-sizing: border-box;
+}
+
+.page > header {
+  width: 100%;
+  min-width: 0;
+}
+
+.page > header > div:first-child > div:first-child > div {
+  min-width: 0;
+}
+
+.page > header input {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.page > header > div:last-child {
+  max-width: 100%;
+  overscroll-behavior-x: contain;
+}
+
+.productGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.productGrid > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.productGrid > div > div:last-child > div:last-child {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.productGrid button {
+  flex-shrink: 0;
+}
+
+.page [aria-label="Панель вкладки"] {
+  bottom: var(--nav-height) !important;
+  max-height: min(70dvh, calc(100dvh - var(--nav-height) - env(safe-area-inset-top, 0px) - 12px)) !important;
+  overscroll-behavior: contain;
+  overflow-wrap: anywhere;
+}
+
+.page > nav {
+  height: var(--nav-height) !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  z-index: 120 !important;
+}
+
+.page > div:has(> div > button) {
+  bottom: calc(var(--nav-height) + 10px) !important;
+}
+
+.page > div > div > button {
+  flex-wrap: wrap;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+  .productGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .page > header > div:first-child {
+    padding: 10px 12px !important;
+  }
+
+  .page > header > div:first-child > div:first-child {
+    gap: 8px !important;
+  }
+
+  .page > header > div:first-child > div:first-child > a {
+    gap: 4px !important;
+  }
+
+  .page > header > div:first-child > div:first-child > a > span:last-child {
+    font-size: 18px !important;
+    letter-spacing: 1px !important;
+  }
+
+  .page > header > div:first-child > div:first-child > div {
+    gap: 6px !important;
+  }
+
+  .page > header a[href="/profile"] {
+    flex-shrink: 0;
+    padding: 6px !important;
+    gap: 4px !important;
+  }
+
+  .page > header a[href="/profile"] > div:first-child {
+    flex-shrink: 0;
+  }
+
+  .page > header a[href="/profile"] > div:last-child {
+    max-width: 72px;
+    overflow-wrap: anywhere;
+  }
+
+  .page > header a[href="/profile"] > div:last-child > div:last-child {
+    font-size: 10px !important;
+  }
+
+  .page > header a[href="/auth"] {
+    padding: 8px 10px !important;
+    flex-shrink: 0;
+  }
+
+  .page [aria-label="Панель вкладки"] {
+    left: max(8px, env(safe-area-inset-left, 0px)) !important;
+    right: max(8px, env(safe-area-inset-right, 0px)) !important;
+    padding: 0 12px 12px !important;
+  }
+
+  .page > div > div > button {
+    padding: 12px !important;
+    font-size: 14px !important;
+  }
+
+  .page > div > div > button > span:last-child {
+    margin-left: auto;
+  }
+}
