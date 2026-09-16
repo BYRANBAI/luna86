@@ -46,7 +46,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   if (!user && pathname !== "/admin/login") return <main className="grid min-h-screen place-items-center bg-[#07111f] text-white">Проверка доступа…</main>;
   if (pathname === "/admin/login") return <>{children}</>;
   const allowed = roles[user?.role] ?? [];
-  return <div className="min-h-screen bg-[#07111f] text-[#f4efe5] md:flex">
+  return <div className="crm-theme min-h-screen bg-[#07111f] text-[#f4efe5] md:flex">
     <aside className="w-full border-b border-[#233650] bg-[#0c1b2d] p-4 md:min-h-screen md:w-64 md:border-b-0 md:border-r">
       <button type="button" onClick={() => router.push("/")} className="mb-5 block text-left text-xl font-bold"><span className="accent">◐</span> ЛУНА · ADMIN</button>
       <p className="muted mb-3 text-xs">Кафе «Луна» · Москва</p>

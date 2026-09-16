@@ -9,22 +9,24 @@ import { z } from "zod";
 const DeliveryOrderSchema = z.object({
   guestId: z.number(),
   items: z.array(z.object({
-    itemId: z.number(),
-    qty: z.number().min(1),
-    price: z.number(),
-  })),
-  addressId: z.number(),
-  bonusesToUse: z.number().min(0).default(0),
-  paymentMethod: z.string(),
-  comment: z.string().optional(),
-  source: z.string(),
+    itemId: z.number().int().positive(),
+    qty: z.number().int().positive(),
+  })).min(1),
+  addressId: z.number().int().positive(),
+  bonusesToUse: z.number().int().min(0).default(0),
+  paymentMethod: z.enum(["cash", "card_delivery"]),
+  comment: z.string().max(1000).optional(),
+  source: z.literal("Сайт"),
 });
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  const body = await req.json().catch(() => null);
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Некорректный JSON" }, { status: 400 });
+  }
 
-  // Проверяем, это заказ с сайта доставки или из CRM
-  if (body.source === "Сайт" && body.addressId) {
+  // Website requests must not fall through to the staff order flow.
+  if (body.source === "Сайт" && ("items" in body || "addressId" in body)) {
     return handleDeliveryOrder(req, body);
   }
 
@@ -289,32 +291,33 @@ async function handleDeliveryOrder(req: NextRequest, body: any) {
         },
       });
 
-      // Валидация наличия блюд и ингредиентов
+      if (new Set(validated.items.map(item => item.itemId)).size !== validated.items.length) {
+        throw new Error("Объедините повторяющиеся блюда в корзине");
+      }
+      const ingredientTotals = new Map<number, number>();
       for (const cartItem of validated.items) {
         const item = items.find(i => i.id === cartItem.itemId);
-        if (!item) {
-          throw new Error(`Блюдо не найдено`);
+        if (!item || !item.active || !item.site) {
+          throw new Error("Блюдо недоступно для доставки");
         }
-
-        if (item.stock < cartItem.qty) {
-          throw new Error(`Недостаточно блюда «${item.name}»: доступно ${item.stock}`);
+        if (item.stock < cartItem.qty || (item.dailyLimit !== null && item.soldToday + cartItem.qty > item.dailyLimit)) {
+          throw new Error(`Недостаточно блюда «${item.name}»`);
         }
-
-        // Проверка ингредиентов
         for (const recipe of item.ingredients) {
-          const available = recipe.ingredient.stock;
-          const required = recipe.grams * cartItem.qty;
-          if (required > available) {
-            await tx.item.update({ where: { id: item.id }, data: { stock: 0 } });
+          const required = (ingredientTotals.get(recipe.ingredientId) ?? 0) + recipe.grams * cartItem.qty;
+          ingredientTotals.set(recipe.ingredientId, required);
+          if (required > recipe.ingredient.stock) {
             throw new Error(`Недостаточно ингредиента «${recipe.ingredient.name}»`);
           }
         }
       }
 
-      // Расчет суммы
-      const subtotal = validated.items.reduce((sum, cartItem) => {
-        return sum + cartItem.price * cartItem.qty;
-      }, 0);
+      // Цены и сумма рассчитываются только по данным из базы
+      const pricedItems = validated.items.map((cartItem) => {
+        const item = items.find((candidate) => candidate.id === cartItem.itemId)!;
+        return { ...cartItem, price: item.deliveryPrice ?? item.price };
+      });
+      const subtotal = pricedItems.reduce((sum, cartItem) => sum + cartItem.price * cartItem.qty, 0);
 
       // Проверяем бонусы
       const maxBonusUse = Math.min(guest.bonuses, Math.floor(subtotal * 0.5));
@@ -341,7 +344,7 @@ async function handleDeliveryOrder(req: NextRequest, body: any) {
             },
           },
           lines: {
-            create: validated.items.map(cartItem => ({
+            create: pricedItems.map(cartItem => ({
               itemId: cartItem.itemId,
               qty: cartItem.qty,
               price: cartItem.price,
@@ -349,9 +352,10 @@ async function handleDeliveryOrder(req: NextRequest, body: any) {
             })),
           },
         },
-        include: {
-          lines: { include: { item: true } },
-          guest: true,
+        select: {
+          id: true, number: true, status: true, total: true, discount: true,
+          createdAt: true, readyAt: true,
+          lines: { select: { itemId: true, qty: true, price: true } },
         },
       });
 
@@ -426,7 +430,7 @@ async function handleDeliveryOrder(req: NextRequest, body: any) {
       await tx.payment.create({
         data: {
           orderId: order.id,
-          type: validated.paymentMethod === "card" ? "Карта" : "Наличные",
+          type: validated.paymentMethod === "card_delivery" ? "Карта" : "Наличные",
           amount: total,
         },
       });

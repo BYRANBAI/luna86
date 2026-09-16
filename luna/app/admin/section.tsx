@@ -75,15 +75,15 @@ function Dashboard({ data }: any) {
         </Card>
         <Card>
           <p className="muted">Выручка за 7 дней</p>
-          <b className="text-2xl">{(m.revenue7 ?? []).reduce((s: number, x: any) => s + x.revenue, 0)} ₽</b>
+          <b className="text-2xl" style={{ color: 'var(--text-primary)' }}>{(m.revenue7 ?? []).reduce((s: number, x: any) => s + x.revenue, 0)} ₽</b>
         </Card>
         <Card>
           <p className="muted">Активные заказы</p>
-          <b className="text-2xl">{m.active ?? 0}</b>
+          <b className="text-2xl" style={{ color: 'var(--text-primary)' }}>{m.active ?? 0}</b>
         </Card>
         <Card>
           <p className="muted">Фудкост</p>
-          <b className="text-2xl">{m.foodCost ?? 0}%</b>
+          <b className="text-2xl" style={{ color: 'var(--text-primary)' }}>{m.foodCost ?? 0}%</b>
         </Card>
       </div>
 
@@ -92,7 +92,7 @@ function Dashboard({ data }: any) {
         <Card>
           <h2 className="font-bold">Выручка по дням</h2>
           {(m.revenue7 ?? []).map((x: any) => (
-            <p className="mt-2 flex justify-between text-sm" key={x.date}>
+            <p className="mt-2 flex justify-between text-sm" key={x.date} style={{ color: 'var(--text-primary)' }}>
               <span>{x.date.slice(5)}</span>
               <b>{x.revenue} ₽</b>
             </p>
@@ -101,7 +101,7 @@ function Dashboard({ data }: any) {
         <Card>
           <h2 className="font-bold">Топ блюд за 7 дней</h2>
           {(m.topItems ?? []).map((x: any) => (
-            <p className="mt-2 flex justify-between text-sm" key={x.name}>
+            <p className="mt-2 flex justify-between text-sm" key={x.name} style={{ color: 'var(--text-primary)' }}>
               <span>{x.name} · {x.qty} порц.</span>
               <b>{x.revenue} ₽</b>
             </p>
@@ -113,7 +113,7 @@ function Dashboard({ data }: any) {
           <p className="muted">занятые столы / всего</p>
           <h2 className="mt-5 font-bold">Ближайшие брони</h2>
           {(data.reservations ?? []).slice(0, 3).map((r: any) => (
-            <p className="mt-2 text-sm" key={r.id}>{new Date(r.date).toLocaleString("ru-RU")} · {r.guestName}</p>
+            <p className="mt-2 text-sm" key={r.id} style={{ color: 'var(--text-primary)' }}>{new Date(r.date).toLocaleString("ru-RU")} · {r.guestName}</p>
           ))}
         </Card>
         <Card>

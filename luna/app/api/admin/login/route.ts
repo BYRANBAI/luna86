@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { verifyPassword, generateTokens } from "@/lib/auth";
+import { verifyPassword, setAuthCookies } from "@/lib/auth";
 import { z } from "zod";
 
 const LoginSchema = z.object({
@@ -35,13 +35,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Генерируем JWT токены
-    const { accessToken, refreshToken } = generateTokens({
-      userId: user.id,
-      role: user.role,
-    });
+    // Устанавливаем auth cookies
+    await setAuthCookies(user);
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       user: {
         id: user.id,
@@ -49,18 +46,7 @@ export async function POST(req: NextRequest) {
         name: user.name,
         role: user.role,
       },
-      token: accessToken,
     });
-
-    // Устанавливаем refresh token в httpOnly cookie
-    response.cookies.set("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 дней
-    });
-
-    return response;
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

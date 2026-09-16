@@ -18,7 +18,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Введите телефон и пароль" }, { status: 400 });
     }
 
-    const guest = await db.guest.findFirst({ where: { phone } });
+    const formattedPhone = /^\+7\d{10}$/.test(phone)
+      ? `${phone.slice(0, 2)} ${phone.slice(2, 5)} ${phone.slice(5, 8)}-${phone.slice(8, 10)}-${phone.slice(10)}`
+      : phone;
+    const guest = await db.guest.findFirst({ where: { phone } })
+      ?? await db.guest.findFirst({ where: { phone: formattedPhone } });
 
     if (!guest || !guest.passwordHash) {
       return NextResponse.json({ error: "Неверный телефон или пароль" }, { status: 401 });

@@ -34,7 +34,8 @@ export default function AuthPage() {
       if (!r.ok) { setError(data.error ?? "Ошибка входа"); return; }
       localStorage.setItem("guestToken", data.token);
       localStorage.setItem("guestId", String(data.guest.id));
-      router.push("/profile");
+      const destination = new URLSearchParams(window.location.search).get("redirect");
+      router.push(destination && ["/checkout", "/menu?tab=cart", "/menu?tab=orders", "/menu?tab=profile"].includes(destination) ? destination : "/menu?tab=profile");
     } finally { setLoading(false); }
   }
 
@@ -51,7 +52,8 @@ export default function AuthPage() {
       if (!r.ok) { setError(data.error ?? "Ошибка регистрации"); return; }
       localStorage.setItem("guestToken", data.token);
       localStorage.setItem("guestId", String(data.guest.id));
-      router.push("/profile");
+      const destination = new URLSearchParams(window.location.search).get("redirect");
+      router.push(destination && ["/checkout", "/menu?tab=cart", "/menu?tab=orders", "/menu?tab=profile"].includes(destination) ? destination : "/menu?tab=profile");
     } finally { setLoading(false); }
   }
 
@@ -89,6 +91,13 @@ export default function AuthPage() {
                 style={{ width: "100%", background: "#8b9dc3", color: "#fff", border: "none", borderRadius: 10, padding: "13px 0", fontSize: 15, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1 }}>
                 {loading ? "Входим…" : "Войти"}
               </button>
+              <div style={{ marginTop: 16, padding: 16, background: "#f8f9fb", borderRadius: 10 }}>
+                <p style={{ fontSize: 12, color: "#666", marginBottom: 8, fontWeight: 600 }}>🔑 Тестовый вход (для демо)</p>
+                <button type="button" onClick={() => { setPhone("+7 900 000-00-01"); setPassword("demo123"); }}
+                  style={{ width: "100%", background: "#fff", color: "#8b9dc3", border: "1.5px solid #8b9dc3", borderRadius: 8, padding: "10px 0", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                  Войти как "Анна Петрова"
+                </button>
+              </div>
             </form>
           ) : (
             <form onSubmit={handleRegister}>

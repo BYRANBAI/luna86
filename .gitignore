@@ -1,0 +1,9 @@
+/my-agent-l7smpp/
+.env
+.env.*
+*.pem
+*.key
+*.log
+__pycache__/
+*.py[cod]
+node_modules/

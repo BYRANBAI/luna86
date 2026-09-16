@@ -44,7 +44,7 @@ export default function CheckoutPage() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<number | null>(null);
   const [bonusesToUse, setBonusesToUse] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState("card");
+  const [paymentMethod, setPaymentMethod] = useState("cash");
   const [comment, setComment] = useState("");
   const [promoCode, setPromoCode] = useState("");
   const [promoDiscount, setPromoDiscount] = useState(0);
@@ -63,8 +63,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadCart();
-    loadGuest();
+    if (loadCart()) loadGuest();
   }, []);
 
   useEffect(() => {
@@ -74,15 +73,19 @@ export default function CheckoutPage() {
   }, [cart]);
 
   const loadCart = () => {
-    const saved = localStorage.getItem("cart");
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setCart(parsed);
-      if (parsed.length === 0) {
-        router.push("/menu");
-      }
-    } else {
-      router.push("/menu");
+    try {
+      const parsed: unknown = JSON.parse(localStorage.getItem("cart") ?? "[]");
+      const safe = Array.isArray(parsed) ? parsed.filter((item): item is CartItem =>
+        item && typeof item === "object" && Number.isInteger((item as CartItem).itemId) &&
+        Number.isInteger((item as CartItem).qty) && (item as CartItem).qty > 0 &&
+        Number.isFinite((item as CartItem).price) && (item as CartItem).price >= 0
+      ) : [];
+      setCart(safe);
+      return safe.length > 0;
+    } catch {
+      localStorage.removeItem("cart");
+      setCart([]);
+      return false;
     }
   };
 
@@ -178,18 +181,17 @@ export default function CheckoutPage() {
     }
   };
 
+  const updateCartQty = (itemId: number, delta: number) => {
+    const updated = cart.map((item) => item.itemId === itemId ? { ...item, qty: item.qty + delta } : item)
+      .filter((item) => item.qty > 0);
+    setCart(updated);
+    localStorage.setItem("cart", JSON.stringify(updated));
+    if (updated.length === 0) router.push("/menu");
+  };
+
   const applyPromoCode = () => {
-    setPromoError("");
     setPromoDiscount(0);
-    const code = promoCode.trim().toUpperCase();
-    if (!code) return;
-    if (code === "WELCOME15") {
-      setPromoDiscount(15);
-    } else if (code === "SALE10") {
-      setPromoDiscount(10);
-    } else {
-      setPromoError("Промокод не найден");
-    }
+    setPromoError("Промокоды для доставки пока недоступны");
   };
 
   const placeOrder = async () => {
@@ -245,6 +247,14 @@ export default function CheckoutPage() {
   const inp2 = "w-full rounded-xl border border-[#e3e8ef] bg-[#f8f9fb] px-4 py-2 text-[#2c3e50] outline-none focus:border-[#8b9dc3] focus:bg-white";
   const sectionTitle: React.CSSProperties = { fontWeight: 800, fontSize: 18, color: "#2c3e50", marginBottom: 16 };
 
+  if (cart.length === 0) return (
+    <main style={{ minHeight: "100vh", background: "#f5f7fa", padding: "48px 24px", color: "#2c3e50", textAlign: "center" }}>
+      <h1 style={{ fontSize: 28, fontWeight: 800 }}>Корзина пока пуста</h1>
+      <p style={{ margin: "16px 0 24px" }}>Добавьте блюда из меню, чтобы оформить заказ.</p>
+      <Link href="/menu" style={{ display: "inline-block", padding: "14px 24px", background: "#E91E63", color: "white", borderRadius: 12 }}>Выбрать блюда</Link>
+    </main>
+  );
+
   return (
     <main style={{ minHeight: "100vh", background: "#f5f7fa" }}>
       <header style={{ background: "#fff", borderBottom: "1px solid #e3e8ef", position: "sticky", top: 0, zIndex: 100 }}>
@@ -260,7 +270,7 @@ export default function CheckoutPage() {
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 16px" }}>
         <h1 style={{ fontWeight: 800, fontSize: 28, color: "#2c3e50", marginBottom: 24 }}>Оформление заказа</h1>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 24, alignItems: "start" }}>
+        <div className="grid grid-cols-1 gap-6 items-start lg:grid-cols-[minmax(0,1fr)_360px]">
           <div>
             {/* Адрес */}
             <div style={card}>
@@ -316,7 +326,7 @@ export default function CheckoutPage() {
             <div style={card}>
               <div style={sectionTitle}>Способ оплаты</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {[{ val: "card", label: "💳 Картой онлайн" }, { val: "cash", label: "💵 Наличными курьеру" }].map(opt => (
+                {[{ val: "card_delivery", label: "💳 Картой курьеру" }, { val: "cash", label: "💵 Наличными курьеру" }].map(opt => (
                   <label key={opt.val} style={{ display: "flex", alignItems: "center", gap: 12, padding: 16, borderRadius: 12, border: `2px solid ${paymentMethod === opt.val ? "#8b9dc3" : "#e3e8ef"}`, background: paymentMethod === opt.val ? "#f0f3f7" : "#fff", cursor: "pointer" }}>
                     <input type="radio" name="payment" value={opt.val} checked={paymentMethod === opt.val} onChange={(e) => setPaymentMethod(e.target.value)} />
                     <span style={{ fontWeight: 600, fontSize: 15, color: "#2c3e50" }}>{opt.label}</span>
@@ -365,6 +375,11 @@ export default function CheckoutPage() {
                       <div style={{ flex: 1 }}>
                         <p style={{ fontSize: 14, fontWeight: 600, color: "#2c3e50", marginBottom: 2 }}>{item.name}</p>
                         <p style={{ fontSize: 12, color: "#a0aec0" }}>{cartItem.qty} × {cartItem.price} ₽</p>
+                        <div className="flex items-center gap-3">
+                          <button disabled={loading} aria-label={`Уменьшить ${item.name}`} className="min-h-11 min-w-11 rounded-lg border" onClick={() => updateCartQty(item.id, -1)}>−</button>
+                          <span>{cartItem.qty}</span>
+                          <button disabled={loading} aria-label={`Добавить ${item.name}`} className="min-h-11 min-w-11 rounded-lg border" onClick={() => updateCartQty(item.id, 1)}>+</button>
+                        </div>
                       </div>
                       <span style={{ fontWeight: 700, fontSize: 14, color: "#2c3e50" }}>{cartItem.qty * cartItem.price} ₽</span>
                     </div>

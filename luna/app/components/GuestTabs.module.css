@@ -1,0 +1,32 @@
+.panel {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.panel * {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.panel > a,
+.panel > div > div:last-child {
+  flex-wrap: wrap;
+}
+
+.panel button,
+.panel a {
+  max-width: 100%;
+}
+
+.panel button {
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .panel > div,
+  .panel > a,
+  .panel > p {
+    padding: 14px !important;
+  }
+}
