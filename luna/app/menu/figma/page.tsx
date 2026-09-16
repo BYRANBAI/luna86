@@ -10,11 +10,12 @@ interface Item {
 interface Category { id: number; name: string; color: string; }
 
 // Палитра из макета Figma (Homescreen 1:3)
-const GREEN = "#1E3A34";      // фон
-const GREEN_DARK = "#162B26"; // низ / карточки
+const GREEN = "#14261F";      // фон
+const GREEN_DARK = "#1C332B"; // карточки
+const GREEN_NAV = "#0F1D18";  // нижняя навигация
 const YELLOW = "#FFC01D";     // акцент
 const WHITE = "#FFFFFF";
-const GRAY = "#9DB3AC";       // вторичный текст на зелёном
+const GRAY = "#8FA89F";       // вторичный текст на зелёном
 
 const CAT_FILTERS = ["All", "Burger", "Pizza", "Sandwich", "Drinks", "Dessert"];
 
@@ -92,17 +93,17 @@ export default function FigmaMenuPage() {
       <section style={{ padding: "20px 24px 0" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
           {featured.map(item => (
-            <div key={item.id} style={{ background: GREEN_DARK, borderRadius: 18, overflow: "hidden", border: `1px solid rgba(255,255,255,0.06)` }}>
-              <div style={{ height: 110, background: "#0f1f1b", overflow: "hidden" }}>
+            <div key={item.id} style={{ background: GREEN_DARK, borderRadius: 20, overflow: "hidden", border: `1px solid rgba(255,255,255,0.05)` }}>
+              <div style={{ aspectRatio: "1", background: "#0E1C17", overflow: "hidden" }}>
                 {item.photo
                   ? <img src={item.photo} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40 }}>🍽️</div>}
+                  : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44 }}>🍽️</div>}
               </div>
-              <div style={{ padding: "10px 12px 12px" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3, minHeight: 34, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>{item.name}</div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-                  <span style={{ fontSize: 15, fontWeight: 800, color: YELLOW }}>{item.deliveryPrice ?? item.price} ₽</span>
-                  <button onClick={() => addToCart(item)} style={{ width: 30, height: 30, borderRadius: 10, border: "none", background: YELLOW, color: "#1A1A1A", fontSize: 17, fontWeight: 800, cursor: "pointer" }}>+</button>
+              <div style={{ padding: "12px 14px 14px" }}>
+                <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3, minHeight: 36, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>{item.name}</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: YELLOW }}>{item.deliveryPrice ?? item.price} ₽</span>
+                  <button onClick={() => addToCart(item)} style={{ width: 32, height: 32, borderRadius: 11, border: "none", background: YELLOW, color: "#1A1A1A", fontSize: 18, fontWeight: 800, cursor: "pointer" }}>+</button>
                 </div>
               </div>
             </div>
@@ -138,7 +139,7 @@ export default function FigmaMenuPage() {
       </section>
 
       {/* Нижняя навигация */}
-      <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: GREEN_DARK, borderTop: `1px solid rgba(255,255,255,0.08)`, height: 68, display: "flex", alignItems: "center", zIndex: 100 }}>
+      <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: GREEN_NAV, borderTop: `1px solid rgba(255,255,255,0.06)`, height: 68, display: "flex", alignItems: "center", zIndex: 100 }}>
         {[
           { icon: "🏠", label: "Главная", href: "/menu/figma", active: true },
           { icon: "🔍", label: "Поиск", href: "/menu", active: false },
