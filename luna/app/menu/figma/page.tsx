@@ -44,8 +44,10 @@ export default function FigmaMenuPage() {
   };
 
   const cartCount = cart.reduce((s, c) => s + c.qty, 0);
-  const featured = items.slice(0, 4);
-  const popular = items.slice(4, 8);
+  // Берём только товары с реальными фото, чтобы карточки были с картинками
+  const withPhoto = items.filter(i => i.photo && i.photo.trim() !== "");
+  const featured = withPhoto.slice(0, 4);
+  const popular = withPhoto.slice(4, 8);
 
   return (
     <div style={{ background: GREEN, minHeight: "100vh", fontFamily: "'Inter', -apple-system, sans-serif", color: WHITE, paddingBottom: 96 }}>
