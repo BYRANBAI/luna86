@@ -275,10 +275,10 @@ export default function MenuPage() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <div style={{ fontWeight: 800, fontSize: 18, color: "#fff" }}>🔥 Хиты и новинки</div>
             </div>
-            <div className={styles.productGrid}>
+            <div style={{ display: "flex", gap: 12, overflowX: "auto", scrollbarWidth: "none", paddingBottom: 4 }}>
               {promoItems.map(item => (
                 <div key={item.id} onClick={() => openModal(item)}
-                  style={{ minWidth: 0, borderRadius: 16, overflow: "hidden", background: "#252525", boxShadow: "0 2px 12px rgba(0,0,0,0.3)", cursor: "pointer" }}>
+                  style={{ flexShrink: 0, width: 140, borderRadius: 16, overflow: "hidden", background: "#252525", boxShadow: "0 2px 12px rgba(0,0,0,0.3)", cursor: "pointer" }}>
                   <div style={{ height: 100, background: "#1A1A1A", overflow: "hidden", position: "relative" }}>
                     {item.photo ? (
                       <img src={item.photo} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />

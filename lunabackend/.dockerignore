@@ -1,0 +1,6 @@
+luna/.next
+luna/node_modules
+luna/prisma/prisma/dev.db
+.git
+.gitignore
+*.log
