@@ -80,6 +80,7 @@ export default function MenuPage() {
   const [showMap, setShowMap] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [compact, setCompact] = useState(false);
   const sectionRefs = useRef<Record<number, HTMLElement | null>>({});
   const catBarRef = useRef<HTMLDivElement>(null);
 
@@ -87,6 +88,30 @@ export default function MenuPage() {
     loadData(); loadGuest();
     const saved = localStorage.getItem("cart");
     if (saved) setCart(JSON.parse(saved));
+  }, []);
+
+  // Прокрутили вниз — шапка сжимается, полоса категорий остаётся закреплённой
+  // и подсвечивает категорию, которая сейчас на экране.
+  useEffect(() => {
+    let frame = 0;
+    const onScroll = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        setCompact(window.scrollY > 110);
+
+        let current: number | null = null;
+        for (const [id, el] of Object.entries(sectionRefs.current)) {
+          if (el && el.getBoundingClientRect().top <= 150) current = Number(id);
+        }
+        if (current !== null) setActiveCat(current);
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
   }, []);
 
   async function loadData() {
@@ -160,7 +185,7 @@ export default function MenuPage() {
   return (
     <div className={styles.page} style={{ background: BG, minHeight: "100vh", fontFamily: "'Inter', -apple-system, sans-serif" }}>
 
-      <header className={styles.header}>
+      <header className={styles.header} data-compact={compact && !search}>
         <div className={styles.hoursBar}>
           <span className={styles.hoursFull}>{CAFE_INFO.hoursShort}</span>
           <span className={styles.hoursMobile}>
