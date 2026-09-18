@@ -13,6 +13,66 @@ interface Bonus { id: number; reason: string; amount: number; }
 const card = { padding: 20, borderRadius: 16, background: "#252525", marginBottom: 12 };
 const action = { padding: "12px 18px", borderRadius: 12, border: "none", background: "#E91E63", color: "white", cursor: "pointer", display: "inline-block", textDecoration: "none" };
 const statuses: Record<string, string> = { NEW: "Принят", CONFIRMED: "Подтверждён", COOKING: "Готовится", READY: "Готов", DELIVERY_ASSIGNED: "Курьер назначен", IN_DELIVERY: "В пути", DELIVERING: "В пути", DELIVERED: "Доставлен", DONE: "Завершён", CANCELLED: "Отменён" };
+const inp = { width: "100%", border: "1px solid #333", borderRadius: 12, padding: "12px 14px", fontSize: 15, outline: "none", background: "#1A1A1A", color: "#fff", boxSizing: "border-box" as const, marginBottom: 10 };
+
+function normalizePhone(raw: string) {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 11 && digits.startsWith("8")) return "+7" + digits.slice(1);
+  if (digits.length === 11 && digits.startsWith("7")) return "+" + digits;
+  if (digits.length === 10) return "+7" + digits;
+  return raw.trim();
+}
+
+function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(""); setLoading(true);
+    try {
+      const url = mode === "login" ? "/api/auth/guest-login" : "/api/auth/register";
+      const body = mode === "login"
+        ? { phone: normalizePhone(phone), password }
+        : { name, phone: normalizePhone(phone), password, email: email || undefined };
+      const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      const data = await r.json();
+      if (!r.ok) { setError(data.error ?? "Ошибка"); return; }
+      localStorage.setItem("guestToken", data.token);
+      localStorage.setItem("guestId", String(data.guest.id));
+      onSuccess();
+    } finally { setLoading(false); }
+  }
+
+  return (
+    <div style={card}>
+      <div style={{ display: "flex", borderRadius: 12, overflow: "hidden", border: "1px solid #333", marginBottom: 16 }}>
+        {(["login", "register"] as const).map(t => (
+          <button key={t} type="button" onClick={() => { setMode(t); setError(""); }}
+            style={{ flex: 1, padding: "10px 0", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer",
+              background: mode === t ? "#E91E63" : "#1A1A1A", color: mode === t ? "#fff" : "#bbb" }}>
+            {t === "login" ? "Войти" : "Регистрация"}
+          </button>
+        ))}
+      </div>
+      <form onSubmit={submit}>
+        {mode === "register" && <input style={inp} type="text" placeholder="Ваше имя" value={name} onChange={e => setName(e.target.value)} required />}
+        <input style={inp} type="tel" placeholder="Телефон (+7 999 000-00-00)" value={phone} onChange={e => setPhone(e.target.value)} required />
+        {mode === "register" && <input style={inp} type="email" placeholder="Email (необязательно)" value={email} onChange={e => setEmail(e.target.value)} />}
+        <input style={inp} type="password" placeholder="Пароль" value={password} onChange={e => setPassword(e.target.value)} required />
+        {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+        <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
+          {loading ? "Подождите…" : mode === "login" ? "Войти" : "Зарегистрироваться"}
+        </button>
+      </form>
+    </div>
+  );
+}
 
 export function CartPanel({ cart, onChange, onMenu }: { cart: CartLine[]; onChange: (cart: CartLine[]) => void; onMenu: () => void }) {
   const quantity = (id: number, delta: number) => onChange(cart.map(line => line.itemId === id ? { ...line, qty: line.qty + delta } : line).filter(line => line.qty > 0));
@@ -33,7 +93,7 @@ export function CartPanel({ cart, onChange, onMenu }: { cart: CartLine[]; onChan
   </section>;
 }
 
-export function AccountPanel({ tab, onLogout }: { tab: "orders" | "profile"; onLogout: () => void }) {
+export function AccountPanel({ tab, onLogout, onLogin }: { tab: "orders" | "profile"; onLogout: () => void; onLogin?: () => void }) {
   const [data, setData] = useState<{ guest: Guest; orders: Order[]; addresses: Address[]; bonuses: Bonus[] } | null>(null);
   const [error, setError] = useState("");
   const [needsLogin, setNeedsLogin] = useState(false);
@@ -59,7 +119,7 @@ export function AccountPanel({ tab, onLogout }: { tab: "orders" | "profile"; onL
   }, [tab, attempt]);
   return <section className={styles.panel} style={{ color: "white", padding: "24px 0" }} aria-label={tab === "orders" ? "Заказы" : "Профиль"}>
     <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>{tab === "orders" ? "Мои заказы" : "Профиль"}</h1>
-    {needsLogin ? <div style={card}><p style={{ marginBottom: 16 }}>Войдите, чтобы увидеть {tab === "orders" ? "свои заказы" : "свой профиль"}.</p><Link style={action} href={`/auth?redirect=${encodeURIComponent(`/menu?tab=${tab}`)}`}>Войти</Link></div> : error ? <div style={card} role="alert"><p style={{ marginBottom: 16 }}>{error}</p><button style={action} onClick={() => setAttempt(x => x + 1)}>Повторить</button></div> : !data ? <p role="status">Загрузка…</p> : tab === "orders" ? <>
+    {needsLogin ? <GuestAuthForm onSuccess={() => { setNeedsLogin(false); setAttempt(x => x + 1); onLogin?.(); }} /> : error ? <div style={card} role="alert"><p style={{ marginBottom: 16 }}>{error}</p><button style={action} onClick={() => setAttempt(x => x + 1)}>Повторить</button></div> : !data ? <p role="status">Загрузка…</p> : tab === "orders" ? <>
       {!data.orders.length && <p style={card}>У вас пока нет заказов.</p>}
       {data.orders.map(order => <Link key={order.id} href={`/orders/${order.id}`} style={{ ...card, display: "flex", gap: 16, justifyContent: "space-between", color: "inherit", textDecoration: "none" }}><div><strong>№{order.number}</strong><p>{statuses[order.status] ?? order.status}</p><small style={{ color: "#bbb" }}>{new Date(order.createdAt).toLocaleString("ru-RU")}</small></div><strong style={{ whiteSpace: "nowrap" }}>{order.total} ₽</strong></Link>)}
     </> : <>

@@ -209,7 +209,7 @@ export default function MenuPage() {
 
             {/* Profile / Auth */}
             {guest ? (
-              <Link href="/profile" style={{ display: "flex", alignItems: "center", gap: 8, background: PINK_LIGHT, borderRadius: 12, padding: "6px 12px", textDecoration: "none" }}>
+              <button onClick={() => selectTab("profile")} style={{ display: "flex", alignItems: "center", gap: 8, background: PINK_LIGHT, borderRadius: 12, padding: "6px 12px", border: "none", cursor: "pointer" }}>
                 <div style={{ width: 28, height: 28, borderRadius: "50%", background: PINK, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 13 }}>
                   {guest.name?.[0]?.toUpperCase()}
                 </div>
@@ -217,11 +217,11 @@ export default function MenuPage() {
                   <div style={{ fontSize: 12, color: GRAY }}>Профиль</div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: PINK }}>🎁 {guest.bonuses} бонусов</div>
                 </div>
-              </Link>
+              </button>
             ) : (
-              <Link href="/auth" style={{ background: PINK, color: "#fff", borderRadius: 12, padding: "8px 16px", fontSize: 13, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
+              <button onClick={() => selectTab("profile")} style={{ background: PINK, color: "#fff", borderRadius: 12, padding: "8px 16px", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>
                 Войти
-              </Link>
+              </button>
             )}
             </div>
           </div>
@@ -372,7 +372,7 @@ export default function MenuPage() {
         </div>
         {tab !== "menu" && <div role="region" aria-label="Панель вкладки" style={{ position: "fixed", left: 12, right: 12, bottom: 60, maxHeight: "70dvh", overflowY: "auto", zIndex: 110, maxWidth: 760, margin: "0 auto", padding: "0 20px 20px", borderRadius: "24px 24px 0 0", background: BG, border: "1px solid #333", boxShadow: "0 -12px 40px rgba(0,0,0,0.35)" }}>
           <div style={{ display: "flex", justifyContent: "flex-end", position: "sticky", top: 0, background: BG, paddingTop: 12 }}><button aria-label="Закрыть панель" onClick={() => selectTab("menu")} style={{ width: 44, height: 44, border: "none", borderRadius: 12, background: "#252525", color: "white", cursor: "pointer", fontSize: 24 }}>×</button></div>
-          {tab === "cart" ? <CartPanel cart={cart} onChange={saveCart} onMenu={() => selectTab("menu")} /> : <AccountPanel key={tab} tab={tab} onLogout={() => setGuest(null)} />}
+          {tab === "cart" ? <CartPanel cart={cart} onChange={saveCart} onMenu={() => selectTab("menu")} /> : <AccountPanel key={tab} tab={tab} onLogout={() => setGuest(null)} onLogin={loadGuest} />}
         </div>}
       </div>
 
