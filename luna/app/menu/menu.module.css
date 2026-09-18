@@ -79,11 +79,13 @@
   text-overflow: ellipsis;
   font-size: 15px;
   font-weight: 600;
+  letter-spacing: 0.01em;
   color: #424242;
 }
 
 .placeBtn,
-.loginTab {
+.loginTab,
+.phoneBtn {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -104,7 +106,8 @@
 }
 
 .placeBtn:hover,
-.loginTab:hover {
+.loginTab:hover,
+.phoneBtn:hover {
   filter: brightness(1.06);
 }
 
@@ -140,13 +143,9 @@
   white-space: nowrap;
 }
 
-.metaPhone {
-  color: #E91E63;
-  font-weight: 700;
-  font-size: 15px;
+.phoneBtn {
   text-decoration: none;
-  white-space: nowrap;
-  flex-shrink: 0;
+  padding-right: 14px;
 }
 
 .loginTab {
@@ -269,9 +268,38 @@
     font-size: 20px;
   }
 
-  .metaHours,
-  .metaPhone {
-    font-size: 13px;
+  .headerTop {
+    flex-wrap: wrap;
+    gap: 6px 8px;
+  }
+
+  .meta {
+    order: 3;
+    flex: 1 1 100%;
+    overflow: visible;
+  }
+
+  .metaHours {
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: unset;
+    flex-shrink: 0;
+  }
+
+  .phoneBtn {
+    padding: 3px 10px 3px 6px;
+    margin-left: auto;
+  }
+
+  .phoneBtn .placeText b {
+    display: none;
+  }
+
+  .phoneBtn .placeText small {
+    font-size: 11px;
+    font-weight: 800;
+    opacity: 1;
   }
 
   .placeBtn {

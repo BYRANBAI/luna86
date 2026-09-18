@@ -163,8 +163,14 @@ export default function MenuPage() {
             </Link>
             <div className={styles.meta}>
               <span className={styles.metaHours}>{CAFE_INFO.hoursShort}</span>
-              <a href={`tel:${CAFE_INFO.phoneHref}`} className={styles.metaPhone}>{CAFE_INFO.phone}</a>
             </div>
+            <a href={`tel:${CAFE_INFO.phoneHref}`} className={styles.phoneBtn}>
+              <span className={styles.placePin} aria-hidden="true">📞</span>
+              <span className={styles.placeText}>
+                <b>Связаться</b>
+                <small>{CAFE_INFO.phone}</small>
+              </span>
+            </a>
           </div>
           <div className={styles.modeSearch}>
             <button type="button" className={styles.placeBtn} onClick={() => setShowMap(true)}>

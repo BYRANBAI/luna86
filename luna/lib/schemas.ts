@@ -24,7 +24,7 @@ export const CreateOrderSchema = z.object({
 export const UpdateOrderSchema = z.object({
   id: z.number().positive().optional(),
   lineId: z.number().positive().optional(),
-  status: z.enum(["NEW", "COOKING", "READY", "DONE", "CANCELLED"]),
+  status: z.enum(["NEW", "COOKING", "READY", "DELIVERED", "DONE", "CANCELLED"]),
   note: z.string().optional()
 });
 

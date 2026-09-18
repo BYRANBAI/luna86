@@ -1,56 +1,71 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/purity */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import styles from "./pos.module.css";
 
 type Any = any;
+type Tab = "tables" | "reservations" | "queue" | "orders";
 
 const money = (n: number) => new Intl.NumberFormat("ru-RU").format(n) + " ₽";
+const ACTIVE = ["NEW", "COOKING", "READY", "DELIVERED"];
+const OPEN_RES = ["Новая", "Подтверждена"];
 
-const formatTime = (date: string | Date) => {
-  const d = new Date(date);
-  return d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+const STATUS_RU: Record<string, string> = {
+  NEW: "На кухне",
+  COOKING: "Готовится",
+  READY: "Готов",
+  DELIVERED: "Подано",
+  DONE: "Оплачен",
+  CANCELLED: "Отменён",
 };
 
-const formatDuration = (minutes: number) => {
-  if (minutes < 60) return `${minutes} мин`;
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return `${hours}ч ${mins}мин`;
-};
+function pad(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+function toLocalInput(d = new Date()) {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function isSameDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function sortTables(tables: Any[]) {
+  return [...tables].sort((a, b) => Number(a.number) - Number(b.number) || String(a.number).localeCompare(String(b.number)));
+}
+
+function tableOrders(orders: Any[], number: string) {
+  return (orders || []).filter((o: Any) => o.tableNumber === number && ACTIVE.includes(o.status));
+}
 
 export default function POS() {
-  const [data, setData] = useState<Any>({ items: [], orders: [], guests: [], categories: [] });
+  const [data, setData] = useState<Any>({ items: [], orders: [], guests: [], categories: [], reservations: [], halls: [] });
   const [table, setTable] = useState("");
   const [cart, setCart] = useState<Any[]>([]);
   const [guest, setGuest] = useState(0);
   const [bonus, setBonus] = useState(0);
   const [payment, setPayment] = useState("Карта");
   const [receipt, setReceipt] = useState<Any>(null);
-  const [split, setSplit] = useState(false);
-  const [splitIds, setSplitIds] = useState<number[]>([]);
-  const [splitBill, setSplitBill] = useState<Any[]>([]);
   const [menuQuery, setMenuQuery] = useState("");
   const [feedFilter, setFeedFilter] = useState("Все");
-  const [activeTab, setActiveTab] = useState<"tables" | "reservations" | "orders" | "queue">("tables");
-  const [selectedReservation, setSelectedReservation] = useState<Any>(null);
-  const [cookingTimers, setCookingTimers] = useState<Record<number, number>>({});
+  const [activeTab, setActiveTab] = useState<Tab>("tables");
   const [guestSearch, setGuestSearch] = useState("");
-  const [showNewGuestForm, setShowNewGuestForm] = useState(false);
-  const [pausedOrders, setPausedOrders] = useState<Record<string, Any[]>>({});
-  const [currentPausedOrder, setCurrentPausedOrder] = useState<string | null>(null);
-  const [tableOrdersCache, setTableOrdersCache] = useState<Record<string, { cart: Any[], guest: number, bonus: number }>>({});
-  const [showTablesSection, setShowTablesSection] = useState(true);
-  const [showBillSection, setShowBillSection] = useState(true);
-  const [archivedOrders, setArchivedOrders] = useState<Any[]>([]);
-  const [tabOrder, setTabOrder] = useState(["tables", "reservations", "orders", "queue"]);
-  const [draggedTab, setDraggedTab] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const [showNewGuest, setShowNewGuest] = useState(false);
+  const [newGuest, setNewGuest] = useState({ name: "", phone: "" });
+  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
+  const [resFormOpen, setResFormOpen] = useState(false);
+  const [resForm, setResForm] = useState({ guestName: "", phone: "", guests: 2, date: toLocalInput(), tableNumber: "", note: "" });
+  const [queueFormOpen, setQueueFormOpen] = useState(false);
+  const [queueForm, setQueueForm] = useState({ guestName: "", phone: "", guests: 2, note: "" });
+  const [seatPick, setSeatPick] = useState<Any>(null);
+  const [payOpen, setPayOpen] = useState(false);
 
-  const load = () => fetch("/api/state").then(r => r.json()).then(setData);
-  
+  const load = () => fetch("/api/state").then((r) => r.json()).then(setData).catch(() => {});
+
   useEffect(() => {
     document.title = "Луна · POS";
     load();
@@ -58,159 +73,73 @@ export default function POS() {
     return () => clearInterval(t);
   }, []);
 
-  // Определение мобильного устройства
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+    if (!note) return;
+    const t = setTimeout(() => setNote(""), 2800);
+    return () => clearTimeout(t);
+  }, [note]);
+
+  const halls: Any[] = data.halls?.length
+    ? data.halls
+    : [{ id: 0, name: "Зал", tables: Array.from({ length: 8 }, (_, i) => ({ id: i + 1, number: String(i + 1), seats: 4 })) }];
+
+  const allTables = useMemo(
+    () => sortTables(halls.flatMap((h: Any) => (h.tables || []).map((t: Any) => ({ ...t, hallName: h.name })))),
+    [halls]
+  );
+
+  const openOrders = table ? tableOrders(data.orders, table) : [];
+  const kitchenTotal = openOrders.reduce((s: number, o: Any) => s + (o.total || 0), 0);
+  const cartTotal = cart.reduce((s, x) => s + x.price * x.qty, 0);
+  const due = Math.max(0, kitchenTotal + cartTotal - bonus);
+  const currentInfo = table ? getTableInfo(table) : null;
+
+  function getTableInfo(num: string) {
+    const orders = tableOrders(data.orders, num);
+    const res = (data.reservations || []).find((r: Any) =>
+      r.table?.number === num && OPEN_RES.includes(r.status) && isSameDay(new Date(r.date), new Date())
+    );
+    if (!orders.length) {
+      return {
+        status: res ? `бронь · ${res.guestName}` : "свободен",
+        occupied: false,
+        reserved: Boolean(res),
+        reservation: res,
+        total: 0,
+        orderStatus: "",
+        startTime: null as string | null,
+      };
+    }
+    const latest = orders[0];
+    const rank = ["READY", "COOKING", "NEW", "DELIVERED"];
+    const hottest = [...orders].sort((a, b) => rank.indexOf(a.status) - rank.indexOf(b.status))[0];
+    return {
+      status: hottest.status === "READY" ? "готов к подаче" : hottest.status === "DELIVERED" ? "за столом" : "занят",
+      occupied: true,
+      reserved: false,
+      reservation: res,
+      total: orders.reduce((s, o) => s + (o.total || 0), 0),
+      orderStatus: hottest.status,
+      startTime: latest.createdAt as string,
+      guests: res?.guests || 0,
     };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  }
 
-  // Таймеры готовки
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const newTimers: Record<number, number> = {};
-      data.orders.forEach((order: Any) => {
-        if (order.status === "COOKING" && order.createdAt) {
-          const startTime = new Date(order.createdAt).getTime();
-          const elapsed = Math.floor((Date.now() - startTime) / 60000); // минуты
-          const cookingTime = order.lines?.reduce((sum: number, line: Any) => {
-            const item = data.items.find((i: Any) => i.id === line.itemId);
-            return sum + (item?.cookingMinutes || 12);
-          }, 0) || 12;
-          newTimers[order.id] = Math.max(0, cookingTime - elapsed);
-        }
-      });
-      setCookingTimers(newTimers);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [data.orders, data.items]);
-
-  const total = cart.reduce((s, x) => s + x.price * x.qty, 0);
-  const due = Math.max(0, total - bonus);
-
-  const add = (i: Any) => setCart(c => {
-    const old = c.find(x => x.id === i.id);
-    return old ? c.map(x => x.id === i.id ? { ...x, qty: x.qty + 1 } : x) : [...c, { ...i, qty: 1 }];
+  const add = (item: Any) => setCart((c) => {
+    const old = c.find((x) => x.id === item.id);
+    return old ? c.map((x) => x.id === item.id ? { ...x, qty: x.qty + 1 } : x) : [...c, { ...item, qty: 1 }];
   });
+  const updateQty = (id: number, delta: number) => setCart((c) =>
+    c.map((x) => x.id === id ? { ...x, qty: x.qty + delta } : x).filter((x) => x.qty > 0)
+  );
 
-  const remove = (id: number) => setCart(c => c.filter(x => x.id !== id));
-
-  const updateQty = (id: number, delta: number) => setCart(c => {
-    return c.map(x => {
-      if (x.id === id) {
-        const newQty = Math.max(0, x.qty + delta);
-        return { ...x, qty: newQty };
-      }
-      return x;
-    }).filter(x => x.qty > 0);
-  });
-
-  const checkout = async (lines = cart, splitMode = false) => {
-    const lineTotal = lines.reduce((sum: number, x: Any) => sum + x.price * x.qty, 0);
-    const lineBonus = Math.min(bonus, lineTotal);
-    const lineDue = Math.max(0, lineTotal - lineBonus);
-    
-    const r = await fetch("/api/orders", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        source: "Зал",
-        tableNumber: table,
-        guestId: guest,
-        bonus: lineBonus,
-        paymentType: payment,
-        payments: [
-          ...(lineBonus ? [{ type: "Бонусы", amount: lineBonus }] : []),
-          { type: payment.replace("Смешанная: бонусы + ", ""), amount: lineDue }
-        ],
-        lines: lines.map(x => ({ itemId: x.id, qty: x.qty }))
-      })
-    });
-    
-    const order = await r.json();
-    if (!r.ok) return alert(order.error || "Не удалось оформить заказ");
-    
-    setReceipt({
-      ...order,
-      lines: lines.map(x => ({ ...x, price: x.price })),
-      payments: [
-        ...(lineBonus ? [{ type: "Бонусы", amount: lineBonus }] : []),
-        { type: payment.replace("Смешанная: бонусы + ", ""), amount: lineDue }
-      ],
-      bonus: lineBonus
-    });
-    
-    if (splitMode) {
-      setSplitBill([]);
-      setSplitIds([]);
-    } else {
-      setCart([]);
-      setGuest(0);
-      setBonus(0);
-      // После успешной оплаты очищаем столик
-      if (table) {
-        const currentOrder = data.orders.find((o: Any) => 
-          o.tableNumber === table && !['DONE', 'CANCELLED'].includes(o.status)
-        );
-        if (currentOrder) {
-          try {
-            await fetch("/api/orders", {
-              method: "PATCH",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({ id: currentOrder.id, status: "DONE", note: "Оплата завершена" })
-            });
-          } catch (error) {
-            console.error("Failed to complete order:", error);
-          }
-        }
-        setTable("");
-      }
-    }
-    load();
-  };
-
-  const divide = () => {
-    const chosen = cart.filter(x => splitIds.includes(x.id));
-    if (!chosen.length) return alert("Выберите позиции во второй счёт");
-    setSplitBill(chosen);
-    setCart(cart.filter(x => !splitIds.includes(x.id)));
-    setSplit(false);
-  };
-
-  const openTable = (t: string) => {
-    // Сохраняем текущее состояние перед переключением
-    if (table && cart.length > 0) {
-      setTableOrdersCache(prev => ({
-        ...prev,
-        [table]: { cart: [...cart], guest, bonus }
-      }));
-    }
-    
-    setTable(t);
-    
-    // Проверяем есть ли кэшированный заказ для этого столика
-    const cachedOrder = tableOrdersCache[t];
-    if (cachedOrder) {
-      setCart(cachedOrder.cart);
-      setGuest(cachedOrder.guest);
-      setBonus(cachedOrder.bonus);
-    } else {
-      const order = data.orders.find((x: Any) => 
-        x.tableNumber === t && !['DONE', 'CANCELLED', 'DELIVERED'].includes(x.status)
-      );
-      if (order) {
-        setCart(order.lines.map((line: Any) => ({ ...line.item, qty: line.qty })));
-        setGuest(order.guestId || 0);
-        setBonus(0);
-      } else {
-        setCart([]);
-        setGuest(0);
-        setBonus(0);
-      }
-    }
+  const openTable = (num: string) => {
+    setTable(num);
+    setCart([]);
+    setGuest(0);
+    setBonus(0);
+    setPayOpen(false);
+    setActiveTab("tables");
   };
 
   const closeTable = () => {
@@ -218,1022 +147,731 @@ export default function POS() {
     setCart([]);
     setGuest(0);
     setBonus(0);
+    setPayOpen(false);
   };
 
-  const clearTable = async () => {
-    if (!confirm("Освободить столик и завершить заказ?")) return;
-    
-    // Находим текущий заказ и обновляем его статус
-    const currentOrder = data.orders.find((o: Any) => 
-      o.tableNumber === table && !['DONE', 'CANCELLED', 'DELIVERED'].includes(o.status)
-    );
-    
-    if (currentOrder) {
-      try {
-        await fetch("/api/orders", {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ id: currentOrder.id, status: "DONE", note: "Столик освобождён" })
-        });
-      } catch (error) {
-        console.error("Failed to clear table:", error);
-        alert("Не удалось освободить столик");
-      }
-    }
-    
-    closeTable();
-    load();
-  };
+  async function patchOrder(id: number, status: string, noteText = "") {
+    const r = await fetch("/api/orders", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id, status, note: noteText }),
+    });
+    const body = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(body.error || "Не удалось обновить заказ");
+  }
 
-  const cancelOrder = async () => {
-    if (!confirm("Отменить текущий заказ? Это действие нельзя отменить.")) return;
-    
-    const currentOrder = data.orders.find((o: Any) => 
-      o.tableNumber === table && !['DONE', 'CANCELLED', 'DELIVERED'].includes(o.status)
-    );
-    
-    if (currentOrder) {
-      try {
-        await fetch("/api/orders", {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ id: currentOrder.id, status: "CANCELLED", note: "Заказ отменён" })
-        });
-      } catch (error) {
-        console.error("Failed to cancel order:", error);
-        alert("Не удалось отменить заказ");
-      }
-    }
-    
-    closeTable();
-    load();
-  };
-
-  const getTableInfo = (tableNum: string) => {
-    const order = data.orders.find((x: Any) => 
-      x.tableNumber === tableNum && !['DONE', 'CANCELLED', 'DELIVERED'].includes(x.status)
-    );
-    
-    if (!order) return { status: "свободен", occupied: false, total: 0, startTime: null, guests: 0 };
-    
-    const isReady = order.status === "READY";
-    const isPaymentPending = order.status === "PAYMENT_PENDING";
-    
-    return {
-      status: isReady ? "готов" : isPaymentPending ? "ожидает оплаты" : "занят",
-      occupied: true,
-      total: order.total,
-      startTime: order.createdAt,
-      guests: order.lines?.reduce((sum: number, line: Any) => sum + line.qty, 0) || 0,
-      orderId: order.id,
-      orderStatus: order.status
-    };
-  };
-
-  const tables = ["1", "2", "3", "4", "5", "6", "7", "8"];
-
-  const createReservation = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // Здесь можно добавить создание брони через API
-    alert("Функция создания брони будет добавлена");
-  };
-
-  const addToQueue = async () => {
-    // Функция добавления в электронную очередь
-    alert("Функция добавления в очередь будет добавлена");
-  };
-
-  const removeFromQueue = async (id: number) => {
-    // Функция удаления из очереди
-    alert("Функция удаления из очереди будет добавлена");
-  };
-
-  const markQueueReady = async (id: number) => {
-    // Функция отметки "Готово" в очереди
-    alert("Функция отметки готовности будет добавлена");
-  };
-
-  const handleDragStart = (e: React.DragEvent, tabId: string) => {
-    setDraggedTab(tabId);
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
-
-  const handleDrop = (e: React.DragEvent, targetTab: string) => {
-    e.preventDefault();
-    if (!draggedTab || draggedTab === targetTab) return;
-
-    const newOrder = [...tabOrder];
-    const draggedIndex = newOrder.indexOf(draggedTab);
-    const targetIndex = newOrder.indexOf(targetTab);
-
-    newOrder.splice(draggedIndex, 1);
-    newOrder.splice(targetIndex, 0, draggedTab);
-
-    setTabOrder(newOrder);
-    setDraggedTab(null);
-  };
-
-  const markDishServed = async (tableNumber: string) => {
-    // Отметить что блюдо подано
-    const currentOrder = data.orders.find((o: Any) => 
-      o.tableNumber === tableNumber && o.status === "READY"
-    );
-    
-    if (currentOrder) {
-      try {
-        await fetch("/api/orders", {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ id: currentOrder.id, status: "DELIVERED", note: "Блюдо подано" })
-        });
-        load();
-      } catch (error) {
-        console.error("Failed to mark dish as served:", error);
-        alert("Не удалось отметить блюдо как поданное");
-      }
-    }
-  };
-
-  const clearCompletedOrders = async () => {
-    // Очистить завершённые заказы из ленты и сохранить в корзину
-    if (!confirm("Убрать все готовые и доставленные заказы из ленты? Они сохранятся в корзину для восстановления.")) return;
-    
-    const completedOrders = data.orders.filter((o: Any) => 
-      ['READY', 'DELIVERED', 'DONE'].includes(o.status)
-    );
-    
-    // Сохраняем в корзину
-    const archivedWithItems = completedOrders.map((order: Any) => ({
-      ...order,
-      items: order.lines?.map((line: Any) => ({
-        ...line.item,
-        qty: line.qty
-      })) || []
-    }));
-    
-    setArchivedOrders(prev => [...prev, ...archivedWithItems]);
-    
-    // Архивируем в базе
-    for (const order of completedOrders) {
-      try {
-        await fetch("/api/orders", {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ id: order.id, status: "ARCHIVED", note: "Убран из ленты" })
-        });
-      } catch (error) {
-        console.error("Failed to archive order:", error);
-      }
-    }
-    
-    load();
-  };
-
-  const restoreOrder = (archivedOrder: Any) => {
-    // Восстановить заказ из архива в корзину
-    if (!confirm(`Восстановить заказ №${archivedOrder.number} в корзину?`)) return;
-    
-    const restoredItems = archivedOrder.items || [];
-    setCart(restoredItems);
-    
-    // Удаляем из архива
-    setArchivedOrders(prev => prev.filter(o => o.id !== archivedOrder.id));
-    
-    alert(`Заказ №${archivedOrder.number} восстановлен в корзине`);
-  };
-
-  const orderToCart = (order: Any) => {
-    // Перенести заказ в корзину
-    const items = order.lines?.map((line: Any) => ({
-      ...line.item,
-      qty: line.qty
-    })) || [];
-    
-    setCart(items);
-    setTable(order.tableNumber || "quick");
-    setGuest(order.guestId || 0);
-    
-    alert(`Заказ №${order.number} добавлен в корзину`);
-  };
-
-  const changeOrderStatus = async (orderId: number, newStatus: string) => {
+  async function sendToKitchen() {
+    if (!cart.length) return;
+    setBusy(true);
     try {
-      await fetch("/api/orders", {
-        method: "PATCH",
+      const isQuick = table === "quick";
+      const r = await fetch("/api/orders", {
+        method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id: orderId, status: newStatus, note: `Статус изменён на ${newStatus}` })
+        body: JSON.stringify({
+          source: isQuick ? "Касса" : "Зал",
+          tableNumber: isQuick ? undefined : table,
+          guestId: guest || undefined,
+          paymentType: "Открытый счёт",
+          lines: cart.map((x) => ({ itemId: x.id, qty: x.qty })),
+        }),
       });
+      const order = await r.json();
+      if (!r.ok) throw new Error(order.error || "Не удалось отправить на кухню");
+      setCart([]);
+      setNote(isQuick ? `Заказ №${order.number} в очереди выдачи` : `Стол ${table}: отправлено на кухню · №${order.number}`);
       load();
-    } catch (error) {
-      console.error("Failed to change order status:", error);
-      alert("Не удалось изменить статус");
+    } catch (e: Any) {
+      alert(e.message || "Ошибка отправки");
+    } finally {
+      setBusy(false);
     }
-  };
+  }
 
-  const deleteOrder = async (orderId: number) => {
-    if (!confirm("Удалить заказ навсегда?")) return;
-    
+  async function payTable() {
+    setBusy(true);
     try {
-      await fetch("/api/orders", {
-        method: "DELETE",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id: orderId })
+      let created: Any = null;
+      if (cart.length) {
+        const isQuick = table === "quick";
+        const r = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            source: isQuick ? "Касса" : "Зал",
+            tableNumber: isQuick ? undefined : table,
+            guestId: guest || undefined,
+            bonus: bonus || undefined,
+            paymentType: payment,
+            lines: cart.map((x) => ({ itemId: x.id, qty: x.qty })),
+          }),
+        });
+        created = await r.json();
+        if (!r.ok) throw new Error(created.error || "Не удалось оформить заказ");
+      }
+
+      const closing = [
+        ...openOrders,
+        ...(created?.id ? [created] : []),
+      ];
+      for (const o of closing) {
+        if (o.status !== "DONE") await patchOrder(o.id, "DONE", `Оплата: ${payment}`);
+      }
+
+      setReceipt({
+        number: closing.map((o: Any) => o.number).filter(Boolean).join(", ") || "—",
+        createdAt: new Date().toISOString(),
+        source: table === "quick" ? "Касса" : "Зал",
+        tableNumber: table === "quick" ? "" : table,
+        lines: [
+          ...openOrders.flatMap((o: Any) => o.lines || []),
+          ...cart.map((x) => ({ name: x.name, qty: x.qty, price: x.price })),
+        ],
+        total: due,
+        payments: [{ type: payment, amount: due }],
+        bonus,
       });
+      closeTable();
       load();
-    } catch (error) {
-      console.error("Failed to delete order:", error);
-      alert("Не удалось удалить заказ");
+    } catch (e: Any) {
+      alert(e.message || "Не удалось закрыть стол");
+    } finally {
+      setBusy(false);
+      setPayOpen(false);
     }
-  };
+  }
 
-  const createGuest = async (e: React.FormEvent) => {
+  async function markServed(orderId: number) {
+    try {
+      await patchOrder(orderId, "DELIVERED", "Подано гостю");
+      load();
+    } catch (e: Any) {
+      alert(e.message);
+    }
+  }
+
+  async function cancelOpen() {
+    if (!confirm("Отменить открытые заказы этого стола?")) return;
+    setBusy(true);
+    try {
+      for (const o of openOrders) await patchOrder(o.id, "CANCELLED", "Отмена официантом");
+      closeTable();
+      load();
+    } catch (e: Any) {
+      alert(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function createGuest(e: React.FormEvent) {
     e.preventDefault();
-    // Функция создания нового гостя
-    alert("Функция создания гостя будет добавлена");
-  };
+    const r = await fetch("/api/pos", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ entity: "guest", ...newGuest }),
+    });
+    const g = await r.json();
+    if (!r.ok) return alert(g.error || "Не удалось создать гостя");
+    setGuest(g.id);
+    setShowNewGuest(false);
+    setNewGuest({ name: "", phone: "" });
+    setNote("Гость сохранён");
+    load();
+  }
 
-  const pauseOrder = () => {
-    if (!table || cart.length === 0) return;
-    
-    // Сохраняем текущий заказ
-    const orderKey = table;
-    setPausedOrders(prev => ({
-      ...prev,
-      [orderKey]: [...cart]
-    }));
-    
-    // Очищаем текущий заказ
-    setCart([]);
-    setGuest(0);
-    setBonus(0);
-    setCurrentPausedOrder(orderKey);
-    
-    alert(`Заказ для стола ${table} сохранён на паузе`);
-  };
+  async function createReservation(e: React.FormEvent) {
+    e.preventDefault();
+    const r = await fetch("/api/pos", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        entity: "reservation",
+        ...resForm,
+        guests: Number(resForm.guests),
+        hallId: halls[0]?.id,
+        tableNumber: resForm.tableNumber || undefined,
+      }),
+    });
+    const body = await r.json();
+    if (!r.ok) return alert(body.error || "Не удалось создать бронь");
+    setResFormOpen(false);
+    setResForm({ guestName: "", phone: "", guests: 2, date: toLocalInput(), tableNumber: "", note: "" });
+    setNote("Бронь создана");
+    load();
+  }
 
-  const resumeOrder = (orderKey: string) => {
-    const savedCart = pausedOrders[orderKey];
-    if (savedCart && savedCart.length > 0) {
-      setCart(savedCart);
-      setTable(orderKey);
-      setCurrentPausedOrder(null);
-      
-      // Удаляем из приостановленных
-      setPausedOrders(prev => {
-        const newPaused = { ...prev };
-        delete newPaused[orderKey];
-        return newPaused;
-      });
+  async function createWaitlist(e: React.FormEvent) {
+    e.preventDefault();
+    const r = await fetch("/api/pos", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        entity: "waitlist",
+        ...queueForm,
+        guests: Number(queueForm.guests),
+        hallId: halls[0]?.id,
+      }),
+    });
+    const body = await r.json();
+    if (!r.ok) return alert(body.error || "Не удалось добавить в очередь");
+    setQueueFormOpen(false);
+    setQueueForm({ guestName: "", phone: "", guests: 2, note: "" });
+    setNote("Гость в очереди");
+    load();
+  }
+
+  async function setReservationStatus(id: number, status: string) {
+    const r = await fetch("/api/pos", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id, status }),
+    });
+    const body = await r.json();
+    if (!r.ok) return alert(body.error || "Не удалось обновить бронь");
+    load();
+  }
+
+  async function seatGuest(reservation: Any, tableNumber?: string) {
+    const num = tableNumber || reservation.table?.number;
+    if (!num) {
+      setSeatPick(reservation);
+      return;
     }
-  };
+    const r = await fetch("/api/pos", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: reservation.id, action: "seat", tableNumber: num }),
+    });
+    const body = await r.json();
+    if (!r.ok) return alert(body.error || "Не удалось посадить");
+    setSeatPick(null);
+    openTable(body.seatedTable || num);
+    setNote(`${reservation.guestName} за столом ${body.seatedTable || num}`);
+    load();
+  }
 
-  const quickOrder = () => {
-    // Сохраняем текущее состояние
-    if (table && cart.length > 0) {
-      setTableOrdersCache(prev => ({
-        ...prev,
-        [table]: { cart: [...cart], guest, bonus }
-      }));
-    }
-    
-    // Быстрый заказ без привязки к столику
-    setTable("quick");
-    setCart([]);
-    setGuest(0);
-    setBonus(0);
-    setActiveTab("tables");
-  };
+  async function removeReservation(id: number) {
+    if (!confirm("Удалить запись?")) return;
+    await fetch("/api/pos", {
+      method: "DELETE",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    load();
+  }
+
+  const menuItems = (data.items || []).filter((i: Any) => {
+    if (i.stock <= 0) return false;
+    if (categoryId && i.categoryId !== categoryId) return false;
+    if (menuQuery && !i.name.toLowerCase().includes(menuQuery.toLowerCase())) return false;
+    return true;
+  });
+
+  const upcomingRes = (data.reservations || [])
+    .filter((r: Any) => r.status !== "Очередь" && r.status !== "Отменена" && r.status !== "Не пришёл")
+    .sort((a: Any, b: Any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  const waitlist = (data.reservations || []).filter((r: Any) => r.status === "Очередь");
+  const pickup = (data.orders || []).filter((o: Any) =>
+    !o.tableNumber && ["NEW", "COOKING", "READY"].includes(o.status)
+  );
+  const liveOrders = (data.orders || []).filter((o: Any) =>
+    !["DONE", "CANCELLED"].includes(o.status) && (feedFilter === "Все" || o.source === feedFilter)
+  );
+
+  const inputCls = styles.input;
+  const tabBtn = (id: Tab, label: string) => (
+    <button
+      key={id}
+      className={`${styles.tab} ${activeTab === id ? styles.tabActive : ""}`}
+      onClick={() => { setActiveTab(id); if (id !== "tables") setTable(""); }}
+    >
+      {label}
+    </button>
+  );
 
   return (
-    <main className={`mx-auto ${isMobile ? 'px-4 py-4' : 'px-6 py-7'}`}>
-      <header className="mb-6 flex items-center justify-between">
-        <Link className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold`} href="/">
-          <span className="accent">◐</span> ЛУНА · POS
-        </Link>
-        <nav className={`flex gap-2 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-          {[
-            ["menu", "Меню"],
-            ["crm", "CRM"],
-            ["kds", "KDS"],
-            ["queue", "Очередь"]
-          ].map(([x, n]) => (
-            <Link className={`btn secondary ${isMobile ? 'px-2 py-1' : 'px-3 py-2'}`} href={"/" + x} key={x}>{n}</Link>
-          ))}
+    <main className={styles.shell}>
+      <header className={styles.header}>
+        <div className={styles.brand}>
+          <Link href="/admin">
+            <span className={styles.moon}>◐</span> ЛУНА · POS
+          </Link>
+          {note && <span className={styles.note}>{note}</span>}
+        </div>
+        <nav className={styles.nav}>
+          <Link className="btn secondary min-h-11 px-4" href="/kds">KDS</Link>
+          <Link className="btn secondary min-h-11 px-4" href="/queue">Экран выдачи</Link>
         </nav>
       </header>
 
-      {/* Вкладки */}
-      <div className="mb-6 flex gap-2 border-b border-[#30425a] pb-2 overflow-x-auto">
-        {tabOrder.map((tabId) => {
-          const tabConfig: Record<string, { label: string, icon: string }> = {
-            tables: { label: "Столики", icon: "🪑" },
-            reservations: { label: "Брони", icon: "📅" },
-            orders: { label: "Заказы и очередь", icon: "�" }
-          };
-          const tab = tabConfig[tabId];
-          if (!tab) return null;
-          
-          return (
-            <button
-              key={tabId}
-              draggable
-              onDragStart={(e) => handleDragStart(e, tabId)}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, tabId)}
-              className={`px-4 py-2 rounded-lg cursor-move ${activeTab === tabId ? "bg-[#6b493a]" : "bg-[#193653]"}`}
-              onClick={() => setActiveTab(tabId as any)}
-            >
-              {tab.icon} {tab.label}
-            </button>
-          );
-        })}
+      <div className={styles.tabs}>
+        {tabBtn("tables", "Столы")}
+        {tabBtn("reservations", "Брони")}
+        {tabBtn("queue", "Очередь")}
+        {tabBtn("orders", "Заказы")}
         <button
-          className="px-4 py-2 rounded-lg bg-[#2d5a3d]"
-          onClick={quickOrder}
+          className={styles.takeaway}
+          onClick={() => { setTable("quick"); setCart([]); setActiveTab("tables"); }}
         >
-          ⚡ Быстрый заказ
+          Навынос
         </button>
       </div>
 
-      {/* Приостановленные заказы */}
-      {Object.keys(pausedOrders).length > 0 && (
-        <section className="panel mb-6 p-4 bg-[#1a2f4a]">
-          <h3 className="text-lg font-bold mb-3">⏸ Приостановленные заказы</h3>
-          <div className="flex gap-2 flex-wrap">
-            {Object.entries(pausedOrders).map(([orderKey, savedCart]) => (
-              <button
-                key={orderKey}
-                className="btn secondary text-sm px-3 py-2"
-                onClick={() => resumeOrder(orderKey)}
-              >
-                Стол {orderKey} ({savedCart.length} позиций)
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Архивированные заказы */}
-      {archivedOrders.length > 0 && (
-        <section className="panel mb-6 p-4 bg-[#1a2f4a]">
-          <h3 className="text-lg font-bold mb-3">📦 Архивированные заказы</h3>
-          <div className="flex gap-2 flex-wrap">
-            {archivedOrders.map((order: Any) => (
-              <button
-                key={order.id}
-                className="btn secondary text-sm px-3 py-2"
-                onClick={() => restoreOrder(order)}
-              >
-                №{order.number} ({order.items?.length || 0} позиций) · {money(order.total)}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {activeTab === "tables" && (
-        <>
-          <section className="panel mb-6 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">Схема зала</h2>
-              <button 
-                className="btn secondary text-sm"
-                onClick={() => setShowTablesSection(!showTablesSection)}
-              >
-                {showTablesSection ? "🔽 Свернуть" : "🔽 Развернуть"}
-              </button>
-            </div>
-            
-            {showTablesSection && (
-              <div className={`grid gap-3 ${isMobile ? 'grid-cols-2' : 'grid-cols-4'}`}>
-              {tables.map(t => {
-                const info = getTableInfo(t);
-                const isSelected = table === t;
-                const isReady = info.orderStatus === "READY";
-                const isCooking = info.orderStatus === "COOKING";
-                const isDelivered = info.orderStatus === "DELIVERED";
-                const elapsed = info.startTime ? Math.floor((Date.now() - new Date(info.startTime).getTime()) / 60000) : 0;
-                
-                // Цветовая индикация статусов
-                let bgColor = "bg-[#193653]"; // Синий - свободен
-                let statusIcon = "";
-                
-                if (isSelected) {
-                  bgColor = "bg-[#6b493a] ring-2 ring-[#d8b45b]"; // Выбран
-                } else if (isDelivered) {
-                  bgColor = "bg-[#3d5a3d]"; // Тёмно-зелёный - блюдо подано
-                  statusIcon = "🍽";
-                } else if (isReady) {
-                  bgColor = "bg-[#2d5a3d]"; // Зелёный - готов к подаче
-                  statusIcon = "✓";
-                } else if (isCooking) {
-                  bgColor = "bg-[#6b493a]"; // Жёлтый/коричневый - готовится
-                  statusIcon = "⏱";
-                } else if (info.occupied) {
-                  bgColor = "bg-[#6b493a]"; // Коричневый - занят
-                }
-                
-                return (
-                  <button
-                    key={t}
-                    onClick={() => isSelected ? closeTable() : openTable(t)}
-                    className={`rounded-xl p-4 transition-all ${bgColor} hover:opacity-80`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-lg font-bold">Стол {t}</span>
-                      {statusIcon && <span className="text-2xl">{statusIcon}</span>}
-                    </div>
-                    <small className="muted block mt-1">{info.status}</small>
-                    
-                    {isReady && (
+      <div className={styles.stage}>
+        {activeTab === "tables" && !table && (
+          <div className={styles.scroll}>
+            {halls.map((hall: Any) => (
+              <section key={hall.id || hall.name} className={`${styles.card} mb-4`}>
+                <h2 className="mb-3 text-lg font-bold">{hall.name || "Схема зала"}</h2>
+                <div className={styles.tables}>
+                  {sortTables(hall.tables || allTables).map((t: Any) => {
+                    const info = getTableInfo(t.number);
+                    const elapsed = info.startTime ? Math.floor((Date.now() - new Date(info.startTime).getTime()) / 60000) : 0;
+                    let bg = styles.free;
+                    if (info.orderStatus === "READY") bg = styles.ready;
+                    else if (info.orderStatus === "DELIVERED") bg = styles.served;
+                    else if (info.occupied) bg = styles.busy;
+                    else if (info.reserved) bg = styles.reserved;
+                    return (
                       <button
-                        className="mt-2 w-full btn bg-green-600 text-xs py-1"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          markDishServed(t);
-                        }}
+                        key={t.id || t.number}
+                        onClick={() => openTable(t.number)}
+                        className={`${styles.table} ${bg}`}
                       >
-                        ✓ Блюдо подано
-                      </button>
-                    )}
-                    {info.occupied && (
-                      <div className="mt-2 text-xs">
-                        <div className="flex justify-between">
-                          <span>Чек:</span>
-                          <span className="font-bold">{money(info.total)}</span>
+                        <div className="flex items-start justify-between">
+                          <span className="text-2xl font-bold">Стол {t.number}</span>
+                          <span className="text-sm opacity-80">{t.seats} мест</span>
                         </div>
-                        {info.startTime && (
-                          <div className="flex justify-between">
-                            <span>Время:</span>
-                            <span>{formatDuration(elapsed)}</span>
-                          </div>
+                        <p className="mt-1 text-sm opacity-90">{info.status}</p>
+                        {info.occupied && (
+                          <p className="mt-2 text-sm font-semibold">
+                            {money(info.total)} · {elapsed} мин
+                          </p>
                         )}
-                        <div className="flex justify-between">
-                          <span>Гостей:</span>
-                          <span>{info.guests}</span>
-                        </div>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-              </div>
-            )}
-          </section>
-
-          {table && (
-            <section className="panel mb-6 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold">Стол {table} · меню</h2>
-                <div className="flex gap-2">
-                  {cart.length > 0 && (
-                    <button onClick={pauseOrder} className="btn secondary text-sm text-blue-400">
-                      ⏸ Пауза
-                    </button>
-                  )}
-                  <button onClick={cancelOrder} className="btn secondary text-sm text-red-400">
-                    ❌ Отменить
-                  </button>
-                  <button onClick={clearTable} className="btn secondary text-sm text-yellow-400">
-                    🗑 Освободить
-                  </button>
-                  <button onClick={closeTable} className="btn secondary text-sm">
-                    ✕ Закрыть
-                  </button>
+                      </button>
+                    );
+                  })}
                 </div>
+              </section>
+            ))}
+          </div>
+        )}
+
+        {activeTab === "tables" && table && (
+          <div className={styles.split}>
+            <section className={styles.pane}>
+              <div className={styles.paneHead}>
+                <button className="btn secondary min-h-11" onClick={closeTable}>← К столам</button>
+                <h2 className="text-xl font-bold">{table === "quick" ? "Навынос" : `Стол ${table}`}</h2>
+                <span className={styles.muted}>{currentInfo?.status}</span>
               </div>
-              
-              {/* Категории */}
-              <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+              <div className={styles.cats}>
                 <button
-                  className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
-                    selectedCategory === null ? "bg-[#d8b45b] text-black" : "bg-[#193653]"
-                  }`}
-                  onClick={() => setSelectedCategory(null)}
+                  className={`${styles.chip} ${categoryId === null ? styles.chipOn : ""}`}
+                  onClick={() => setCategoryId(null)}
                 >
                   Все
                 </button>
                 {(data.categories || []).map((cat: Any) => (
                   <button
                     key={cat.id}
-                    className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
-                      selectedCategory === cat.id ? "bg-[#d8b45b] text-black" : "bg-[#193653]"
-                    }`}
-                    onClick={() => setSelectedCategory(cat.id)}
+                    className={`${styles.chip} ${categoryId === cat.id ? styles.chipOn : ""}`}
+                    onClick={() => setCategoryId(cat.id)}
                   >
                     {cat.name}
                   </button>
                 ))}
               </div>
-
               <input
-                className="w-full rounded-lg bg-[#15263c] p-3"
+                className={`${inputCls} mb-3`}
                 placeholder="Поиск блюда"
-                onChange={e => setMenuQuery(e.target.value)}
+                value={menuQuery}
+                onChange={(e) => setMenuQuery(e.target.value)}
               />
-              
-              <div className={`mt-3 grid gap-2 max-h-[500px] overflow-y-auto ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                {data.items
-                  .filter((i: Any) => {
-                    const matchesCategory = selectedCategory === null || i.categoryId === selectedCategory;
-                    const matchesSearch = i.name.toLowerCase().includes(menuQuery.toLowerCase());
-                    const inStock = i.stock > 0;
-                    return matchesCategory && matchesSearch && inStock;
-                  })
-                  .map((i: Any) => (
-                    <button
-                      className="btn secondary text-left p-3 hover:bg-[#2a3f5a]"
-                      onClick={() => add(i)}
-                      key={i.id}
-                    >
-                      <div className="flex flex-col">
-                        <span className="font-medium">{i.name}</span>
-                        <div className="flex justify-between items-center mt-1">
-                          <span className="text-sm text-[#d8b45b]">{money(i.price)}</span>
-                          {i.cookingMinutes && (
-                            <small className="muted text-xs">⏱ {i.cookingMinutes} мин</small>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-              </div>
-
-              <div className="mt-6 border-t border-[#30425a] pt-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold">Счёт</h2>
+              <div className={styles.menuGrid}>
+                {menuItems.map((i: Any) => (
                   <button
-                    className="btn secondary text-sm"
-                    onClick={() => setShowBillSection(!showBillSection)}
+                    key={i.id}
+                    className={styles.dish}
+                    onClick={() => add(i)}
                   >
-                    {showBillSection ? "🔽 Свернуть" : "🔽 Развернуть"}
+                    {i.photo ? (
+                      <img className={styles.dishPhoto} src={i.photo} alt="" />
+                    ) : (
+                      <span className={styles.dishPhoto} />
+                    )}
+                    <div className={styles.dishBody}>
+                      <div className="font-semibold leading-tight">{i.name}</div>
+                      <div className="mt-2 flex items-center justify-between text-sm">
+                        <span className={styles.price}>{money(i.price)}</span>
+                        {i.cookingMinutes ? <span className={styles.muted}>{i.cookingMinutes} мин</span> : null}
+                      </div>
+                    </div>
                   </button>
-                </div>
-
-                {showBillSection && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      {/* Статус текущего заказа */}
-                      {(() => {
-                        const currentOrder = data.orders.find((o: Any) => 
-                          o.tableNumber === table && !['DONE', 'CANCELLED', 'DELIVERED'].includes(o.status)
-                        );
-                        if (currentOrder) {
-                          const isReady = currentOrder.status === "READY";
-                          const isCooking = currentOrder.status === "COOKING";
-                          const timer = cookingTimers[currentOrder.id];
-                          
-                          return (
-                            <div className={`px-3 py-1 rounded-full text-sm ${
-                              isReady ? "bg-green-600" : isCooking ? "bg-yellow-600" : "bg-blue-600"
-                            }`}>
-                              {isReady ? "✓ Готов к подаче" : 
-                               isCooking ? `⏱ Готовится${timer ? ` (${timer} мин)` : ''}` : 
-                               "📝 В ожидании"}
-                            </div>
-                          );
-                        }
-                        return null;
-                      })()}
-                    </div>
-                    
-                    <div className="max-h-64 overflow-y-auto">
-                      {cart.map(x => (
-                        <div className="flex justify-between items-center border-b border-[#30425a] py-2" key={x.id}>
-                          <div className="flex-1">
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={splitIds.includes(x.id)}
-                                onChange={() => setSplitIds(v => 
-                                  v.includes(x.id) ? v.filter(id => id !== x.id) : [...v, x.id]
-                                )}
-                              />
-                              {x.name}
-                            </label>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button 
-                              className="btn secondary text-xs px-2 py-1"
-                              onClick={() => updateQty(x.id, -1)}
-                            >
-                              -
-                            </button>
-                            <span className="w-8 text-center">{x.qty}</span>
-                            <button 
-                              className="btn secondary text-xs px-2 py-1"
-                              onClick={() => updateQty(x.id, 1)}
-                            >
-                              +
-                            </button>
-                            <span className="ml-2 font-bold">{money(x.price * x.qty)}</span>
-                            <button 
-                              className="btn secondary text-xs ml-2"
-                              onClick={() => remove(x.id)}
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="flex justify-between text-xl items-center pt-4 border-t border-[#30425a]">
-                      <span>К оплате</span>
-                      <b className="accent">{money(due)}</b>
-                    </div>
-                    
-                    <div className="mt-4">
-                      <div className="mt-3">
-                        <div className="flex gap-2 mb-2">
-                          <input
-                            className="flex-1 rounded-lg bg-[#15263c] p-3"
-                            placeholder="Поиск гостя по номеру"
-                            value={guestSearch}
-                            onChange={e => setGuestSearch(e.target.value)}
-                          />
-                          <button 
-                            className="btn px-3"
-                            onClick={() => setShowNewGuestForm(true)}
-                          >
-                            +
-                          </button>
-                        </div>
-                        <select
-                          className="w-full rounded-lg bg-[#15263c] p-3"
-                          value={guest}
-                          onChange={e => setGuest(Number(e.target.value))}
-                        >
-                          <option value={0}>Без гостя</option>
-                          {data.guests
-                            .filter((g: Any) => !guestSearch || g.phone.includes(guestSearch) || g.name.toLowerCase().includes(guestSearch.toLowerCase()))
-                            .map((g: Any) => (
-                              <option key={g.id} value={g.id}>
-                                {g.name} · {g.phone} · {g.bonuses} бонусов
-                              </option>
-                            ))}
-                        </select>
-                      </div>
-                      
-                      <input
-                        className="mt-3 w-full rounded-lg bg-[#15263c] p-3"
-                        type="number"
-                        min="0"
-                        max={data.guests.find((g: Any) => g.id === guest)?.bonuses || 0}
-                        value={bonus}
-                        onChange={e => setBonus(Number(e.target.value))}
-                        placeholder="Бонусы"
-                      />
-                      
-                      <select
-                        className="mt-3 w-full rounded-lg bg-[#15263c] p-3"
-                        value={payment}
-                        onChange={e => setPayment(e.target.value)}
-                      >
-                        <option>Наличные</option>
-                        <option>Карта</option>
-                        <option>QR/СБП</option>
-                        <option>Смешанная: бонусы + карта</option>
-                      </select>
-                      
-                      <div className="mt-3 flex gap-2">
-                        <button
-                          className="btn secondary flex-1"
-                          onClick={() => { setSplit(!split); divide(); }}
-                        >
-                          Разделить
-                        </button>
-                        <button
-                          className="btn flex-1"
-                          disabled={!cart.length}
-                          onClick={() => checkout()}
-                        >
-                          Оплатить
-                        </button>
-                      </div>
-                      
-                      {splitBill.length > 0 && (
-                        <div className="mt-4 rounded-xl bg-[#182a42] p-3">
-                          <b>Второй счёт</b>
-                          {splitBill.map(x => (
-                            <p className="flex justify-between text-sm" key={x.id}>
-                              {x.name} × {x.qty}
-                              <span>{money(x.price * x.qty)}</span>
-                            </p>
-                          ))}
-                          <button
-                            className="btn mt-3 w-full"
-                            onClick={() => checkout(splitBill, true)}
-                          >
-                            Оплатить второй счёт
-                          </button>
-                        </div>
-                      )}
-                      
-                      {split && (
-                        <p className="muted mt-3 text-sm">
-                          Отметьте позиции чекбоксами и нажмите «Разделить».
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
+                ))}
               </div>
             </section>
-          )}
-        </>
-      )}
 
-      {activeTab === "reservations" && (
-        <section className="panel p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold">Брони</h2>
-            <button 
-              className="btn"
-              onClick={() => setSelectedReservation({})}
-            >
-              + Новая бронь
-            </button>
-          </div>
-          
-          {(data.reservations || []).map((r: Any) => (
-            <div className="border-b border-[#30425a] py-3" key={r.id}>
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-bold">{new Date(r.date).toLocaleString("ru-RU")}</p>
-                  <p className="text-sm">{r.guestName} · стол {r.table?.number ?? "любой"}</p>
-                  <p className="text-sm muted">Гостей: {r.guests} · {r.note}</p>
-                </div>
-                <div className="text-right">
-                  <span className={`inline-block px-2 py-1 rounded text-xs ${
-                    r.status === "Новая" ? "bg-blue-600" :
-                    r.status === "Подтверждена" ? "bg-green-600" :
-                    r.status === "Занята" ? "bg-yellow-600" :
-                    "bg-gray-600"
-                  }`}>
-                    {r.status}
-                  </span>
-                  <div className="mt-2 flex gap-2">
-                    <button className="btn secondary text-xs">Подтвердить</button>
-                    <button className="btn secondary text-xs">Отменить</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-          
-          {showNewGuestForm && (
-            <div className="fixed inset-0 grid place-items-center bg-black/70 p-5">
-              <div className="w-full max-w-md rounded-xl bg-[#1a2f4a] p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-bold">Новый гость</h3>
-                  <button onClick={() => setShowNewGuestForm(false)} className="text-2xl">×</button>
-                </div>
-                <form onSubmit={createGuest}>
-                  <input
-                    className="w-full rounded-lg bg-[#15263c] p-3 mb-3"
-                    placeholder="Имя"
-                    required
-                  />
-                  <input
-                    className="w-full rounded-lg bg-[#15263c] p-3 mb-3"
-                    type="tel"
-                    placeholder="Номер телефона"
-                    required
-                  />
-                  <button type="submit" className="btn w-full">Создать гостя</button>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {selectedReservation !== null && (
-            <div className="fixed inset-0 grid place-items-center bg-black/70 p-5">
-              <div className="w-full max-w-md rounded-xl bg-[#1a2f4a] p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-bold">Новая бронь</h3>
-                  <button onClick={() => setSelectedReservation(null)} className="text-2xl">×</button>
-                </div>
-                <form onSubmit={createReservation}>
-                  <input
-                    className="w-full rounded-lg bg-[#15263c] p-3 mb-3"
-                    placeholder="Имя гостя"
-                    required
-                  />
-                  <input
-                    className="w-full rounded-lg bg-[#15263c] p-3 mb-3"
-                    type="datetime-local"
-                    required
-                  />
-                  <input
-                    className="w-full rounded-lg bg-[#15263c] p-3 mb-3"
-                    type="number"
-                    placeholder="Количество гостей"
-                    min="1"
-                    required
-                  />
-                  <select className="w-full rounded-lg bg-[#15263c] p-3 mb-3">
-                    <option value="">Любой стол</option>
-                    {tables.map(t => (
-                      <option key={t} value={t}>Стол {t}</option>
-                    ))}
-                  </select>
-                  <textarea
-                    className="w-full rounded-lg bg-[#15263c] p-3 mb-3"
-                    placeholder="Примечание"
-                    rows={3}
-                  />
-                  <button type="submit" className="btn w-full">Создать бронь</button>
-                </form>
-              </div>
-            </div>
-          )}
-        </section>
-      )}
-
-      {activeTab === "queue" && (
-        <section className="panel p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold">Электронная очередь</h2>
-            <button 
-              className="btn"
-              onClick={addToQueue}
-            >
-              + Добавить в очередь
-            </button>
-          </div>
-          
-          <div className="grid gap-3">
-            {/* Имитация очереди - в реальности будет приходить из API */}
-            <div className="border-b border-[#30425a] py-3 flex justify-between items-center">
-              <div>
-                <p className="font-bold">№1 - Алексей Иванов</p>
-                <p className="text-sm muted">Прибыл: 10:30 · 2 человека</p>
-              </div>
-              <div className="flex gap-2">
-                <button 
-                  className="btn bg-green-600 text-xs"
-                  onClick={() => markQueueReady(1)}
-                >
-                  ✓ Готово
-                </button>
-                <button 
-                  className="btn secondary text-xs"
-                  onClick={() => removeFromQueue(1)}
-                >
-                  ✕ Удалить
-                </button>
-              </div>
-            </div>
-            
-            <div className="border-b border-[#30425a] py-3 flex justify-between items-center">
-              <div>
-                <p className="font-bold">№2 - Мария Петрова</p>
-                <p className="text-sm muted">Прибыла: 10:35 · 4 человека</p>
-              </div>
-              <div className="flex gap-2">
-                <button 
-                  className="btn bg-green-600 text-xs"
-                  onClick={() => markQueueReady(2)}
-                >
-                  ✓ Готово
-                </button>
-                <button 
-                  className="btn secondary text-xs"
-                  onClick={() => removeFromQueue(2)}
-                >
-                  ✕ Удалить
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {activeTab === "orders" && (
-        <section className="panel p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-bold">Лента заказов</h2>
-            <div className="flex gap-2">
-              <select
-                className="rounded bg-[#15263c] p-2"
-                value={feedFilter}
-                onChange={e => setFeedFilter(e.target.value)}
-              >
-                <option>Все</option>
-                <option>Сайт</option>
-                <option>Киоск</option>
-                <option>Зал</option>
-                <option>Доставка</option>
-              </select>
-              <button 
-                className="btn secondary text-sm"
-                onClick={clearCompletedOrders}
-              >
-                🗑 Очистить готовые
-              </button>
-            </div>
-          </div>
-          
-          {data.orders
-            .filter((o: Any) => !['DONE', 'ARCHIVED'].includes(o.status) && (feedFilter === "Все" || o.source === feedFilter))
-            .map((o: Any) => {
-              const timer = cookingTimers[o.id];
-              const isReady = o.status === "READY";
-              const isCooking = o.status === "COOKING";
-              
-              return (
-                <div className="border-b border-[#30425a] py-3" key={o.id}>
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold">№ {o.number}</span>
-                        <span className="text-sm muted">{o.source}</span>
-                        {o.tableNumber && <span className="text-sm muted">· стол {o.tableNumber}</span>}
+            <aside className={styles.pane}>
+              <h2 className="mb-3 text-xl font-bold">Счёт</h2>
+              <div className={styles.bill}>
+                {openOrders.length > 0 && (
+                  <div>
+                    <p className={`mb-2 font-semibold ${styles.muted}`}>Уже на кухне</p>
+                    {openOrders.map((o: Any) => (
+                      <div key={o.id} className={styles.ticket}>
+                        <div className="flex items-center justify-between">
+                          <b>№ {o.number}</b>
+                          <span className={`${styles.badge} ${
+                            o.status === "READY" ? styles.bReady : o.status === "COOKING" ? styles.bCook : o.status === "DELIVERED" ? styles.bServed : styles.bNew
+                          }`}>
+                            {STATUS_RU[o.status] || o.status}
+                          </span>
+                        </div>
+                        {(o.lines || []).map((l: Any) => (
+                          <p key={l.id} className="mt-1 flex justify-between text-sm">
+                            <span>{l.item?.name || l.name} × {l.qty}</span>
+                            <span>{money(l.price * l.qty)}</span>
+                          </p>
+                        ))}
+                        {o.status === "READY" && (
+                          <button className="btn mt-2 min-h-11 w-full bg-green-600" onClick={() => markServed(o.id)}>
+                            Подано гостю
+                          </button>
+                        )}
                       </div>
-                      <p className="text-sm mt-1">
+                    ))}
+                  </div>
+                )}
+
+                <div>
+                  <p className={`mb-2 font-semibold ${styles.muted}`}>Новые позиции</p>
+                  {cart.length === 0 && <p className={styles.muted}>Нажмите блюдо слева — оно попадёт в счёт</p>}
+                  {cart.map((x) => (
+                    <div key={x.id} className={styles.line}>
+                      <span className="pr-2">{x.name}</span>
+                      <div className="flex items-center gap-2">
+                        <button className={styles.qty} onClick={() => updateQty(x.id, -1)}>−</button>
+                        <span className="w-6 text-center font-bold">{x.qty}</span>
+                        <button className={styles.qty} onClick={() => updateQty(x.id, 1)}>+</button>
+                        <span className="w-20 text-right font-semibold">{money(x.price * x.qty)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.footer}>
+                <div className={styles.total}>
+                  <span>К оплате</span>
+                  <b className={styles.price}>{money(due)}</b>
+                </div>
+                <div className={styles.actions}>
+                  <button className="btn min-h-12" disabled={!cart.length || busy} onClick={sendToKitchen}>
+                    На кухню
+                  </button>
+                  <button
+                    className="btn secondary min-h-12"
+                    disabled={busy || (!openOrders.length && !cart.length)}
+                    onClick={() => setPayOpen(true)}
+                  >
+                    Оплатить
+                  </button>
+                </div>
+                {table !== "quick" && openOrders.length > 0 && (
+                  <button className={styles.danger} onClick={cancelOpen}>
+                    Отменить заказ стола
+                  </button>
+                )}
+              </div>
+            </aside>
+          </div>
+        )}
+
+        {activeTab === "reservations" && (
+          <section className={`${styles.card} ${styles.scroll}`}>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold">Брони на сегодня и дальше</h2>
+              <button className="btn min-h-11" onClick={() => setResFormOpen(true)}>+ Бронь</button>
+            </div>
+            {upcomingRes.length === 0 && <p className={styles.muted}>Броней нет — создайте первую</p>}
+            <div className="grid gap-3">
+              {upcomingRes.map((r: Any) => (
+                <div key={r.id} className={styles.item}>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-lg font-bold">{r.guestName}</p>
+                      <p className={styles.muted}>
+                        {new Date(r.date).toLocaleString("ru-RU", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        {" · "}стол {r.table?.number ?? "любой"} · {r.guests} гостей
+                      </p>
+                      {r.phone && <p className="text-sm">{r.phone}</p>}
+                      {r.note && <p className={styles.muted}>{r.note}</p>}
+                    </div>
+                    <span className={`rounded-full px-3 py-1 text-sm text-white ${
+                      r.status === "Подтверждена" ? "bg-green-600" :
+                      r.status === "Посажен" ? "bg-emerald-800" :
+                      r.status === "Новая" ? "bg-blue-600" : "bg-gray-500"
+                    }`}>{r.status}</span>
+                  </div>
+                  {r.status !== "Посажен" && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {r.status === "Новая" && (
+                        <button className="btn secondary min-h-11" onClick={() => setReservationStatus(r.id, "Подтверждена")}>Подтвердить</button>
+                      )}
+                      <button className="btn min-h-11" onClick={() => seatGuest(r)}>Посадить</button>
+                      <button className="btn secondary min-h-11" onClick={() => setReservationStatus(r.id, "Отменена")}>Отменить</button>
+                      <button className="btn secondary min-h-11" onClick={() => setReservationStatus(r.id, "Не пришёл")}>Не пришёл</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {activeTab === "queue" && (
+          <div className={styles.queueGrid}>
+            <section className={styles.card}>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-xl font-bold">Ждут стол</h2>
+                <button className="btn min-h-11" onClick={() => setQueueFormOpen(true)}>+ В очередь</button>
+              </div>
+              {waitlist.length === 0 && <p className={styles.muted}>Живой очереди нет</p>}
+              {waitlist.map((r: Any, i: number) => {
+                const waitMin = Math.max(0, Math.floor((Date.now() - new Date(r.date).getTime()) / 60000));
+                return (
+                  <div key={r.id} className={styles.item}>
+                    <div className="flex justify-between gap-2">
+                      <div>
+                        <p className="text-lg font-bold">№{i + 1} · {r.guestName}</p>
+                        <p className={styles.muted}>{r.guests} гостей · ждут {waitMin} мин{r.phone ? ` · ${r.phone}` : ""}</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <button className="btn min-h-11 flex-1" onClick={() => seatGuest(r)}>Посадить</button>
+                      <button className="btn secondary min-h-11" onClick={() => removeReservation(r.id)}>Убрать</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </section>
+            <section className={styles.card}>
+              <h2 className="mb-4 text-xl font-bold">Выдача навынос</h2>
+              {pickup.length === 0 && <p className={styles.muted}>Нет заказов без стола</p>}
+              {pickup.map((o: Any) => (
+                <div key={o.id} className={styles.item}>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-lg font-bold">№ {o.number} · {o.source}</p>
+                      <p className="text-sm">
                         {(o.lines || []).map((l: Any) => `${l.item?.name || l.name} × ${l.qty}`).join(", ")}
                       </p>
-                      {isCooking && timer !== undefined && (
-                        <div className="mt-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm">⏱ Готовность:</span>
-                            <div className="flex-1 bg-[#15263c] rounded-full h-2">
-                              <div 
-                                className="bg-[#d8b45b] h-2 rounded-full transition-all"
-                                style={{ width: `${Math.max(0, 100 - (timer / 12) * 100)}%` }}
-                              />
-                            </div>
-                            <span className="text-sm font-bold">{timer} мин</span>
-                          </div>
-                        </div>
-                      )}
                     </div>
-                    <div className="text-right">
-                      <span className={`inline-block px-2 py-1 rounded text-xs mb-2 ${
-                        isReady ? "bg-green-600" :
-                        isCooking ? "bg-yellow-600" :
-                        o.status === "NEW" ? "bg-blue-600" :
-                        "bg-gray-600"
-                      }`}>
-                        {({
-                          NEW: "Новый",
-                          COOKING: "Готовится",
-                          READY: "Готов",
-                          DONE: "Выдан",
-                          DELIVERY_ASSIGNED: "Курьер назначен",
-                          IN_DELIVERY: "В доставке",
-                          DELIVERED: "Доставлен",
-                          CANCELLED: "Отменён"
-                        } as Any)[o.status] || o.status}
-                      </span>
-                      <div className="font-bold">{money(o.total)}</div>
-                      <button 
-                        className="btn secondary text-xs mt-2"
-                        onClick={() => setReceipt(o)}
-                      >
-                        Печать чека
+                    <span className={`rounded-full px-2 py-1 text-xs text-white ${o.status === "READY" ? "bg-green-600" : "bg-amber-600"}`}>
+                      {STATUS_RU[o.status] || o.status}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    {o.status === "READY" && (
+                      <button className="btn min-h-11 flex-1" onClick={() => patchOrder(o.id, "DONE", "Выдано").then(load)}>
+                        Выдать
                       </button>
-                    </div>
+                    )}
+                    <button className="btn secondary min-h-11" onClick={() => patchOrder(o.id, "CANCELLED", "Снят с выдачи").then(load)}>
+                      Отмена
+                    </button>
                   </div>
                 </div>
+              ))}
+            </section>
+          </div>
+        )}
+
+        {activeTab === "orders" && (
+          <section className={`${styles.card} ${styles.scroll}`}>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="text-xl font-bold">Лента заказов</h2>
+              <select className={inputCls + " max-w-48"} value={feedFilter} onChange={(e) => setFeedFilter(e.target.value)}>
+                <option>Все</option>
+                <option>Зал</option>
+                <option>Касса</option>
+                <option>Сайт</option>
+                <option>Киоск</option>
+                <option>Доставка</option>
+              </select>
+            </div>
+            {liveOrders.map((o: Any) => (
+              <div key={o.id} className="flex flex-wrap items-start justify-between gap-3 border-b border-[#2a425c] py-3">
+                <div>
+                  <p className="font-bold">
+                    № {o.number} · {o.source}
+                    {o.tableNumber ? ` · стол ${o.tableNumber}` : ""}
+                  </p>
+                  <p className={styles.muted}>
+                    {(o.lines || []).map((l: Any) => `${l.item?.name || l.name} × ${l.qty}`).join(", ")}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className={`inline-block rounded-full px-2 py-1 text-xs text-white ${
+                    o.status === "READY" ? "bg-green-600" : o.status === "COOKING" ? "bg-amber-600" : "bg-blue-600"
+                  }`}>{STATUS_RU[o.status] || o.status}</span>
+                  <div className="mt-1 font-bold">{money(o.total)}</div>
+                  {o.tableNumber && (
+                    <button className="mt-2 text-sm underline" onClick={() => openTable(o.tableNumber)}>Открыть стол</button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </section>
+        )}
+      </div>
+
+      {showNewGuest && (
+        <Modal title="Новый гость" onClose={() => setShowNewGuest(false)}>
+          <form onSubmit={createGuest} className="space-y-3">
+            <input className={inputCls} placeholder="Имя" value={newGuest.name} onChange={(e) => setNewGuest({ ...newGuest, name: e.target.value })} required />
+            <input className={inputCls} placeholder="Телефон" value={newGuest.phone} onChange={(e) => setNewGuest({ ...newGuest, phone: e.target.value })} required />
+            <button className="btn min-h-12 w-full" type="submit">Сохранить</button>
+          </form>
+        </Modal>
+      )}
+
+      {resFormOpen && (
+        <Modal title="Новая бронь" onClose={() => setResFormOpen(false)}>
+          <form onSubmit={createReservation} className="space-y-3">
+            <input className={inputCls} placeholder="Имя гостя" value={resForm.guestName} onChange={(e) => setResForm({ ...resForm, guestName: e.target.value })} required />
+            <input className={inputCls} placeholder="Телефон" value={resForm.phone} onChange={(e) => setResForm({ ...resForm, phone: e.target.value })} />
+            <input className={inputCls} type="datetime-local" value={resForm.date} onChange={(e) => setResForm({ ...resForm, date: e.target.value })} required />
+            <input className={inputCls} type="number" min={1} value={resForm.guests} onChange={(e) => setResForm({ ...resForm, guests: Number(e.target.value) })} />
+            <select className={inputCls} value={resForm.tableNumber} onChange={(e) => setResForm({ ...resForm, tableNumber: e.target.value })}>
+              <option value="">Любой стол</option>
+              {allTables.map((t: Any) => (
+                <option key={t.id || t.number} value={t.number}>Стол {t.number} · {t.seats} мест</option>
+              ))}
+            </select>
+            <textarea className={inputCls} placeholder="Примечание" rows={2} value={resForm.note} onChange={(e) => setResForm({ ...resForm, note: e.target.value })} />
+            <button className="btn min-h-12 w-full" type="submit">Создать бронь</button>
+          </form>
+        </Modal>
+      )}
+
+      {queueFormOpen && (
+        <Modal title="В очередь на стол" onClose={() => setQueueFormOpen(false)}>
+          <form onSubmit={createWaitlist} className="space-y-3">
+            <input className={inputCls} placeholder="Имя гостя" value={queueForm.guestName} onChange={(e) => setQueueForm({ ...queueForm, guestName: e.target.value })} required />
+            <input className={inputCls} placeholder="Телефон" value={queueForm.phone} onChange={(e) => setQueueForm({ ...queueForm, phone: e.target.value })} />
+            <input className={inputCls} type="number" min={1} value={queueForm.guests} onChange={(e) => setQueueForm({ ...queueForm, guests: Number(e.target.value) })} />
+            <textarea className={inputCls} placeholder="Примечание" rows={2} value={queueForm.note} onChange={(e) => setQueueForm({ ...queueForm, note: e.target.value })} />
+            <button className="btn min-h-12 w-full" type="submit">Добавить</button>
+          </form>
+        </Modal>
+      )}
+
+      {seatPick && (
+        <Modal title={`Посадить · ${seatPick.guestName}`} onClose={() => setSeatPick(null)}>
+          <p className={`mb-3 ${styles.muted}`}>Выберите свободный стол</p>
+          <div className={styles.seatGrid}>
+            {allTables.map((t: Any) => {
+              const occupied = tableOrders(data.orders, t.number).length > 0;
+              return (
+                <button
+                  key={t.id || t.number}
+                  disabled={occupied}
+                  className={occupied ? styles.seatOff : styles.seat}
+                  onClick={() => seatGuest(seatPick, t.number)}
+                >
+                  Стол {t.number}{occupied ? " · занят" : ""}
+                </button>
               );
             })}
-        </section>
+          </div>
+        </Modal>
+      )}
+
+      {payOpen && (
+        <Modal title={table === "quick" ? "Оплата навынос" : `Оплата · стол ${table}`} onClose={() => setPayOpen(false)}>
+          <div className="mb-4 flex justify-between text-xl">
+            <span>К оплате</span>
+            <b>{money(due)}</b>
+          </div>
+          <div className="mb-3 flex gap-2">
+            <input
+              className={inputCls}
+              placeholder="Гость по телефону"
+              value={guestSearch}
+              onChange={(e) => setGuestSearch(e.target.value)}
+            />
+            <button className="btn secondary min-h-12 px-4" type="button" onClick={() => setShowNewGuest(true)}>+</button>
+          </div>
+          <select className={`${inputCls} mb-3`} value={guest} onChange={(e) => setGuest(Number(e.target.value))}>
+            <option value={0}>Без гостя</option>
+            {(data.guests || [])
+              .filter((g: Any) => !guestSearch || g.phone?.includes(guestSearch) || g.name?.toLowerCase().includes(guestSearch.toLowerCase()))
+              .map((g: Any) => (
+                <option key={g.id} value={g.id}>{g.name} · {g.phone} · {g.bonuses} бон.</option>
+              ))}
+          </select>
+          <input
+            className={`${inputCls} mb-3`}
+            type="number"
+            min={0}
+            max={(data.guests || []).find((g: Any) => g.id === guest)?.bonuses || 0}
+            value={bonus}
+            onChange={(e) => setBonus(Number(e.target.value))}
+            placeholder="Списать бонусы"
+          />
+          <select className={`${inputCls} mb-4`} value={payment} onChange={(e) => setPayment(e.target.value)}>
+            <option>Наличные</option>
+            <option>Карта</option>
+            <option>QR/СБП</option>
+          </select>
+          <button className="btn min-h-12 w-full" disabled={busy || due < 0} onClick={payTable}>Закрыть стол</button>
+        </Modal>
       )}
 
       {receipt && (
-        <div className="fixed inset-0 grid place-items-center bg-black/70 p-5">
-          <div className="w-full max-w-sm rounded-xl bg-white p-6 text-black">
-            <div className="flex justify-between">
+        <div className="fixed inset-0 z-30 grid place-items-center bg-black/70 p-5">
+          <div className={styles.receipt}>
+            <div className="mb-2 flex justify-between">
               <b>КАФЕ «ЛУНА»</b>
               <button onClick={() => setReceipt(null)}>×</button>
             </div>
-            <p>Заказ №{receipt.number} · {new Date(receipt.createdAt || Date.now()).toLocaleString("ru-RU")}</p>
+            <p>Заказ №{receipt.number}</p>
             <p>{receipt.source}{receipt.tableNumber ? ` · стол ${receipt.tableNumber}` : ""}</p>
-            <hr className="my-3"/>
+            <hr className="my-3" />
             {(receipt.lines || []).map((l: Any) => (
               <p className="flex justify-between" key={l.id || l.itemId}>
                 <span>{l.item?.name || l.name} × {l.qty}</span>
-                <span>{money(l.price * l.qty)}</span>
+                <span>{money((l.price || 0) * l.qty)}</span>
               </p>
             ))}
-            <hr className="my-3"/>
+            <hr className="my-3" />
             <p className="flex justify-between font-bold">
               <span>Итого</span>
-              <span>{money(receipt.total || receipt.lines?.reduce((s: number, l: Any) => s + l.price * l.qty, 0) || 0)}</span>
+              <span>{money(receipt.total || 0)}</span>
             </p>
-            <p>Оплата: {(receipt.payments || []).map((p: Any) => `${p.type} ${money(p.amount)}`).join(", ") || payment}</p>
-            <p>Бонусы списано: {receipt.bonus || 0} · начислено: {Math.floor((receipt.total || 0) * .05)}</p>
-            <small>ФН 9999078900000000 · ФД 1234 · ФПД 567890<br/>QR: [|||||||||||||]</small>
+            <p className="mt-2 text-sm">Оплата: {payment}</p>
+            <button className="btn mt-4 min-h-12 w-full" onClick={() => setReceipt(null)}>Готово</button>
           </div>
         </div>
       )}
     </main>
+  );
+}
+
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div className={styles.overlay}>
+      <div className={styles.modal}>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-xl font-bold">{title}</h3>
+          <button className="text-3xl leading-none" onClick={onClose}>×</button>
+        </div>
+        {children}
+      </div>
+    </div>
   );
 }

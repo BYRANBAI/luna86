@@ -31,7 +31,8 @@
   color-scheme: light;
 }
 
-.crm-theme {
+.crm-theme,
+.staff-theme {
   --bg-primary: #102137;
   --bg-secondary: #0c1b2d;
   --bg-tertiary: #182a42;
@@ -40,6 +41,42 @@
   --text-tertiary: #a8b8ce;
   --border: #334963;
   color-scheme: dark;
+}
+
+.staff-theme {
+  --bg-secondary: #07111f;
+  --accent-primary: #d8b45b;
+  --accent-hover: #c9a44a;
+  --accent-light: rgba(216, 180, 91, 0.18);
+  --border: #2a425c;
+  min-height: 100dvh;
+  background:
+    radial-gradient(1200px 500px at 10% -10%, rgba(216, 180, 91, 0.08), transparent 55%),
+    radial-gradient(900px 420px at 100% 0%, rgba(45, 90, 61, 0.14), transparent 50%),
+    var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.staff-theme .panel {
+  background: rgba(16, 33, 55, 0.92);
+  border-color: var(--border);
+}
+
+.staff-theme .panel:hover {
+  transform: none;
+  box-shadow: var(--shadow-sm);
+  border-color: var(--border);
+}
+
+.staff-theme .btn.secondary {
+  background: #15263c;
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+.staff-theme .btn.secondary:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--accent-primary);
 }
 
 html {
