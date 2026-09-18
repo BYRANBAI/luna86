@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { db } from "@/lib/db";
 import type { User } from "@prisma/client";
 
@@ -53,13 +53,22 @@ export function verifyRefreshToken(token: string): RefreshTokenPayload | null {
   }
 }
 
+export async function cookieSecure() {
+  try {
+    const proto = (await headers()).get("x-forwarded-proto")?.split(",")[0]?.trim();
+    if (proto) return proto === "https";
+  } catch { /* outside a request */ }
+  return false;
+}
+
 export async function setAuthCookies(user: User) {
   const { accessToken, refreshToken } = generateTokens(user);
   const jar = await cookies();
+  const secure = await cookieSecure();
 
   jar.set("luna_access_token", accessToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure,
     sameSite: "lax",
     path: "/",
     maxAge: 15 * 60 // 15 minutes
@@ -67,7 +76,7 @@ export async function setAuthCookies(user: User) {
 
   jar.set("luna_refresh_token", refreshToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure,
     sameSite: "lax",
     path: "/",
     maxAge: 7 * 24 * 60 * 60 // 7 days
@@ -149,7 +158,7 @@ export function createSession(userId: number) {
     value: token,
     options: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       sameSite: "lax" as const,
       path: "/",
       maxAge: 7 * 24 * 60 * 60 // 7 days
