@@ -161,29 +161,27 @@ export default function MenuPage() {
               <span className={styles.logoText}>LUNA</span>
             </Link>
             <div className={styles.meta}>
-              <span className={styles.metaHours}>{CAFE_INFO.hours.replace("Пн–Вс ", "")}</span>
+              <span className={styles.metaHours}>{CAFE_INFO.hoursShort}</span>
               <a href={`tel:${CAFE_INFO.phoneHref}`} className={styles.metaPhone}>{CAFE_INFO.phone}</a>
             </div>
-            {guest ? (
-              <button type="button" className={styles.guestBtn} onClick={() => selectTab("profile")}>
-                <div style={{ width: 24, height: 24, borderRadius: "50%", background: PINK, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 12 }}>
-                  {guest.name?.[0]?.toUpperCase()}
-                </div>
-                <span style={{ fontSize: 12, fontWeight: 700, color: PINK }}>🎁 {guest.bonuses}</span>
-              </button>
-            ) : (
-              <button type="button" className={styles.loginBtn} onClick={() => selectTab("profile")}>Войти</button>
-            )}
           </div>
           <div className={styles.modeSearch}>
             <button type="button" className={styles.placeBtn} onClick={() => setShowMap(true)}>
               <span className={styles.placePin} aria-hidden="true">📍</span>
               <span className={styles.placeText}>
                 <b>Мы здесь</b>
-                <small>{CAFE_INFO.address.replace(", г. Покачи", "")} · карта</small>
+                <small>{CAFE_INFO.address.replace(", г. Покачи", "")}</small>
               </span>
             </button>
             <input className={styles.search} type="text" placeholder="🔍 Найти блюдо..." value={search} onChange={e => setSearch(e.target.value)} />
+            {!guest && (
+              <button type="button" className={styles.loginTab} onClick={() => selectTab("profile")}>
+                <span className={styles.placePin} aria-hidden="true">👤</span>
+                <span className={styles.placeText}>
+                  <b>Вход</b>
+                </span>
+              </button>
+            )}
           </div>
         </div>
         {!search && (
