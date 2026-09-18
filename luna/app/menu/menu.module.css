@@ -8,7 +8,8 @@
   --shadow-sheet: 0 -16px 48px rgba(92, 70, 46, 0.18);
   min-width: 0;
   max-width: 100%;
-  overflow-x: hidden;
+  /* clip, а не hidden: hidden создаёт скролл-контейнер и ломает position: sticky у шапки. */
+  overflow-x: clip;
   padding-bottom: calc(var(--nav-height) + 150px);
 }
 

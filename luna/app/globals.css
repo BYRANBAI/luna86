@@ -41,14 +41,15 @@
 html {
   scroll-behavior: smooth;
   max-width: 100%;
-  overflow-x: hidden;
+  /* clip вместо hidden: hidden делает элемент скролл-контейнером и ломает position: sticky. */
+  overflow-x: clip;
 }
 
 body {
   background: var(--bg-secondary);
   color: var(--text-primary);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  overflow-x: hidden;
+  overflow-x: clip;
   -webkit-font-smoothing: subpixel-antialiased;
   -moz-osx-font-smoothing: auto;
   text-rendering: optimizeSpeed;
