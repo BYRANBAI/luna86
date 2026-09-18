@@ -201,7 +201,7 @@ export default function MenuPage() {
                       padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
                     }}
                   >
-                    Карты
+                    Карта
                   </button>
                 </div>
               </div>
