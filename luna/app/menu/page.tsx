@@ -24,9 +24,6 @@ const CAT_ICONS: Record<string, string> = {
 };
 
 const PINK = "#E91E63";
-const PINK_LIGHT = "#FCE4EC";
-const DARK = "#212121";
-const GRAY = "#757575";
 const BG = "#1A1A1A"; // Темный фон
 
 // Функция генерации градиентов для placeholder изображений
@@ -168,105 +165,46 @@ export default function MenuPage() {
   return (
     <div className={styles.page} style={{ background: BG, minHeight: "100vh", fontFamily: "'Inter', -apple-system, sans-serif" }}>
 
-      {/* HEADER */}
-      <header style={{ background: "#fff", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 1px 0 #F0F0F0" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "12px 16px" }}>
-
-          {/* Logo + Top row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 12 }}>
-            {/* Logo */}
-            <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-              <span style={{ fontSize: 24 }}>🌙</span>
-              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: PINK, letterSpacing: 2 }}>LUNA</span>
+      <header className={styles.header}>
+        <div className={styles.headerInner}>
+          <div className={styles.headerTop}>
+            <Link href="/" className={styles.logo}>
+              <span className={styles.logoMark}>🌙</span>
+              <span className={styles.logoText}>LUNA</span>
             </Link>
-
-            <div style={{ flex: 1, display: "flex", alignItems: "flex-start", gap: 12 }}>
-            {/* Address + cafe contacts */}
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 6, flex: 1, minWidth: 0 }}>
-              <span style={{ fontSize: 16, lineHeight: "18px" }}>📍</span>
-              <div style={{ textAlign: "left", minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 12, color: GRAY }}>Доставка</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: DARK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {savedAddress ?? "Карта и адрес"}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
-                  <span style={{ fontSize: 12, color: GRAY, whiteSpace: "nowrap" }}>🕐 {CAFE_INFO.hours}</span>
-                  <a href={`tel:${CAFE_INFO.phoneHref}`} style={{ fontSize: 12, color: PINK, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
-                    {CAFE_INFO.phone}
-                  </a>
-                  <button
-                    onClick={() => setShowMap(true)}
-                    style={{
-                      background: PINK, color: "#fff", border: "none", borderRadius: 8,
-                      padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
-                    }}
-                  >
-                    Карта
-                  </button>
-                </div>
-              </div>
+            <div className={styles.meta}>
+              <span aria-hidden="true">📍</span>
+              <span className={styles.metaAddr}>{savedAddress ?? "Адрес"}</span>
+              <span className={styles.metaHours}>{CAFE_INFO.hours.replace("Пн–Вс ", "")}</span>
+              <a href={`tel:${CAFE_INFO.phoneHref}`} className={styles.metaPhone}>{CAFE_INFO.phone}</a>
+              <button type="button" className={styles.mapBtn} onClick={() => setShowMap(true)}>Карта</button>
             </div>
-
-            {/* Profile / Auth */}
             {guest ? (
-              <button onClick={() => selectTab("profile")} style={{ display: "flex", alignItems: "center", gap: 8, background: PINK_LIGHT, borderRadius: 12, padding: "6px 12px", border: "none", cursor: "pointer" }}>
-                <div style={{ width: 28, height: 28, borderRadius: "50%", background: PINK, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 13 }}>
+              <button type="button" className={styles.guestBtn} onClick={() => selectTab("profile")}>
+                <div style={{ width: 24, height: 24, borderRadius: "50%", background: PINK, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 12 }}>
                   {guest.name?.[0]?.toUpperCase()}
                 </div>
-                <div>
-                  <div style={{ fontSize: 12, color: GRAY }}>Профиль</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: PINK }}>🎁 {guest.bonuses} бонусов</div>
-                </div>
+                <span style={{ fontSize: 12, fontWeight: 700, color: PINK }}>🎁 {guest.bonuses}</span>
               </button>
             ) : (
-              <button onClick={() => selectTab("profile")} style={{ background: PINK, color: "#fff", borderRadius: 12, padding: "8px 16px", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>
-                Войти
-              </button>
+              <button type="button" className={styles.loginBtn} onClick={() => selectTab("profile")}>Войти</button>
             )}
+          </div>
+          <div className={styles.modeSearch}>
+            <div className={styles.mode}>
+              <button type="button" data-on={deliveryType === "delivery"} onClick={() => setDeliveryType("delivery")}>🚙 Доставка</button>
+              <button type="button" data-on={deliveryType === "pickup"} onClick={() => setDeliveryType("pickup")}>🏃 Самовывоз</button>
             </div>
-          </div>
-
-          {/* Delivery / Pickup toggle */}
-          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-            <button onClick={() => setDeliveryType("delivery")} style={{
-              flex: 1, padding: "8px 0", borderRadius: 10, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 14,
-              background: deliveryType === "delivery" ? PINK : "#F5F5F5",
-              color: deliveryType === "delivery" ? "#fff" : GRAY,
-            }}><span style={{ filter: "grayscale(1) brightness(0.25)" }}>🚙</span> Доставка</button>
-            <button onClick={() => setDeliveryType("pickup")} style={{
-              flex: 1, padding: "8px 0", borderRadius: 10, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 14,
-              background: deliveryType === "pickup" ? PINK : "#F5F5F5",
-              color: deliveryType === "pickup" ? "#fff" : GRAY,
-            }}>🏃 Самовывоз</button>
-          </div>
-
-          {/* Search */}
-          <div style={{ position: "relative" }}>
-            <input
-              type="text" placeholder="🔍 Найти блюдо..."
-              value={search} onChange={e => setSearch(e.target.value)}
-              style={{ width: "100%", border: "none", borderRadius: 12, padding: "10px 16px", fontSize: 14, background: "#F5F5F5", color: DARK, outline: "none", boxSizing: "border-box" }}
-            />
+            <input className={styles.search} type="text" placeholder="🔍 Найти блюдо..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
-
-        {/* Category tabs */}
         {!search && (
-          <div ref={catBarRef} style={{ borderTop: "1px solid #F0F0F0" }}>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 0", padding: "4px 8px", alignItems: "center", justifyContent: "center" }}>
-              {categories.map(cat => (
-                <button key={cat.id} data-cat={cat.id} onClick={() => scrollToCat(cat.id)}
-                  style={{
-                    padding: "6px 16px", border: "none", background: "none", cursor: "pointer",
-                    fontSize: 13, fontWeight: activeCat === cat.id ? 700 : 500,
-                    color: activeCat === cat.id ? PINK : GRAY,
-                    borderBottom: "none",
-                    whiteSpace: "nowrap", transition: "all 0.2s",
-                  }}>
-                  {CAT_ICONS[cat.name] ?? "🍴"} {cat.name}
-                </button>
-              ))}
-            </div>
+          <div ref={catBarRef} className={styles.cats}>
+            {categories.map(cat => (
+              <button key={cat.id} type="button" data-cat={cat.id} data-on={activeCat === cat.id} onClick={() => scrollToCat(cat.id)}>
+                {CAT_ICONS[cat.name] ?? "🍴"} {cat.name}
+              </button>
+            ))}
           </div>
         )}
       </header>

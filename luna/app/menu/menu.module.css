@@ -15,19 +15,190 @@
   min-width: 0;
 }
 
-.page > header > div:first-child > div:first-child > div {
+.header {
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 0 #F0F0F0;
+}
+
+.headerInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4px 12px 4px;
+}
+
+.headerTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
 }
 
-.page > header input {
-  display: block;
-  min-width: 0;
-  max-width: 100%;
+.logo {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
-.page > header > div:last-child {
+.logoMark {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.logoText {
+  font-family: "Playfair Display", serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #E91E63;
+  letter-spacing: 1px;
+}
+
+.meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px 8px;
+  flex-wrap: nowrap;
+  font-size: 11px;
+  color: #757575;
+  line-height: 1.2;
+  overflow: hidden;
+}
+
+.metaAddr {
+  font-size: 12px;
+  font-weight: 700;
+  color: #212121;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: min(180px, 28vw);
+}
+
+.metaHours {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.metaPhone {
+  color: #E91E63;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.mapBtn {
+  background: none;
+  color: #E91E63;
+  border: none;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.loginBtn {
+  background: #E91E63;
+  color: #fff;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.guestBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #FCE4EC;
+  border-radius: 10px;
+  padding: 4px 8px;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.modeSearch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  min-width: 0;
+}
+
+.mode {
+  display: flex;
+  flex-shrink: 0;
+  background: #F5F5F5;
+  border-radius: 10px;
+  padding: 2px;
+}
+
+.mode button {
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: transparent;
+  color: #757575;
+}
+
+.mode button[data-on="true"] {
+  background: #E91E63;
+  color: #fff;
+}
+
+.search {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  background: #F5F5F5;
+  color: #212121;
+  outline: none;
+  height: 28px;
+}
+
+.cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  padding: 0 8px 2px;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px solid #F0F0F0;
   max-width: 100%;
   overscroll-behavior-x: contain;
+}
+
+.cats button {
+  padding: 4px 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  color: #757575;
+  white-space: nowrap;
+}
+
+.cats button[data-on="true"] {
+  font-weight: 700;
+  color: #E91E63;
 }
 
 .productGrid {
@@ -81,49 +252,30 @@
     gap: 10px;
   }
 
-  .page > header > div:first-child {
-    padding: 10px 12px !important;
+  .headerInner {
+    padding: 4px 10px 3px;
   }
 
-  .page > header > div:first-child > div:first-child {
-    gap: 8px !important;
+  .metaAddr {
+    max-width: min(120px, 28vw);
   }
 
-  .page > header > div:first-child > div:first-child > a {
-    gap: 4px !important;
+  .modeSearch {
+    flex-wrap: nowrap;
   }
 
-  .page > header > div:first-child > div:first-child > a > span:last-child {
-    font-size: 18px !important;
-    letter-spacing: 1px !important;
+  .mode {
+    width: auto;
   }
 
-  .page > header > div:first-child > div:first-child > div {
-    gap: 6px !important;
+  .mode button {
+    flex: none;
+    padding: 5px 8px;
   }
 
-  .page > header a[href="/profile"] {
-    flex-shrink: 0;
-    padding: 6px !important;
-    gap: 4px !important;
-  }
-
-  .page > header a[href="/profile"] > div:first-child {
-    flex-shrink: 0;
-  }
-
-  .page > header a[href="/profile"] > div:last-child {
-    max-width: 72px;
-    overflow-wrap: anywhere;
-  }
-
-  .page > header a[href="/profile"] > div:last-child > div:last-child {
-    font-size: 10px !important;
-  }
-
-  .page > header a[href="/auth"] {
-    padding: 8px 10px !important;
-    flex-shrink: 0;
+  .search {
+    width: auto;
+    flex: 1 1 auto;
   }
 
   .page [aria-label="Панель вкладки"] {
