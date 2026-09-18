@@ -16,7 +16,9 @@ interface Guest { id: number; name: string; bonuses: number; }
 
 const CAT_ICONS: Record<string, string> = {
   "Запечённые роллы": "🔥", "Классические роллы": "🍱", "Горячие роллы": "♨️",
-  "Маки": "🍣", "Бургеры": "🍔", "Салаты": "🥗", "Супы": "🍜",
+  "Маки": "🍣", "Фирменные роллы": "🍴", "Спецпозиции": "🍴",
+  "Пицца": "🍕", "Узбекская кухня": "🍲",
+  "Бургеры": "🍔", "Салаты": "🥗", "Супы": "🍜",
   "Кофе и напитки": "☕", "Завтраки": "🍳", "Основные блюда": "🍽️",
   "Десерты": "🍰", "Комбо": "🎁",
 };
@@ -154,7 +156,7 @@ export default function MenuPage() {
     <div className={styles.page} style={{ background: BG, minHeight: "100vh", fontFamily: "'Inter', -apple-system, sans-serif" }}>
 
       {/* HEADER */}
-      <header style={{ background: "#fff", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 1px 0 #F0F0F0" }}>
+      <header className={styles.header} style={{ background: "#fff", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 1px 0 #F0F0F0" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "12px 16px" }}>
 
           {/* Logo + Top row */}
@@ -222,21 +224,21 @@ export default function MenuPage() {
 
         {/* Category tabs */}
         {!search && (
-          <div ref={catBarRef} style={{ overflowX: "auto", scrollbarWidth: "none", borderTop: "1px solid #F0F0F0" }}>
-            <div style={{ display: "flex", gap: 0, padding: "0 8px", height: 44, alignItems: "center", width: "max-content" }}>
-              {categories.map(cat => (
-                <button key={cat.id} data-cat={cat.id} onClick={() => scrollToCat(cat.id)}
-                  style={{
-                    padding: "6px 16px", border: "none", background: "none", cursor: "pointer",
-                    fontSize: 13, fontWeight: activeCat === cat.id ? 700 : 500,
-                    color: activeCat === cat.id ? PINK : GRAY,
-                    borderBottom: "none",
-                    whiteSpace: "nowrap", transition: "all 0.2s",
-                  }}>
-                  {CAT_ICONS[cat.name] ?? "🍴"} {cat.name}
-                </button>
-              ))}
-            </div>
+          <div ref={catBarRef} className={styles.cats}>
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                data-cat={cat.id}
+                className={styles.cat}
+                onClick={() => scrollToCat(cat.id)}
+                style={{
+                  fontWeight: activeCat === cat.id ? 700 : 500,
+                  color: activeCat === cat.id ? PINK : GRAY,
+                }}
+              >
+                {CAT_ICONS[cat.name] ?? "🍴"} {cat.name}
+              </button>
+            ))}
           </div>
         )}
       </header>
