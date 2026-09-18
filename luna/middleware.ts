@@ -27,6 +27,9 @@ const GUEST_PATHS = ["/menu", "/checkout", "/orders", "/order", "/profile", "/au
 export function middleware(req: NextRequest) {
   const host = (req.headers.get("host") ?? "").split(":")[0];
   const { pathname, search } = req.nextUrl;
+  // Схема из nginx (proxy_set_header X-Forwarded-Proto) — после установки
+  // SSL редиректы сами станут https без правок кода.
+  const proto = req.headers.get("x-forwarded-proto") ?? "http";
 
   // API, статику и файлы пропускаем всегда
   if (
@@ -47,7 +50,9 @@ export function middleware(req: NextRequest) {
     }
     // Гостевые страницы уходят на основной сайт
     if (matches(GUEST_PATHS)) {
-      return NextResponse.redirect(new URL(`https://luna86.ru${pathname}${search}`));
+      return NextResponse.redirect(
+        new URL(`${proto}://luna86.ru${pathname}${search}`)
+      );
     }
     return NextResponse.next();
   }
@@ -59,7 +64,9 @@ export function middleware(req: NextRequest) {
     }
     // Служебные страницы уходят в панель
     if (matches(STAFF_PATHS)) {
-      return NextResponse.redirect(new URL(`https://${PANEL_HOST}${pathname}${search}`));
+      return NextResponse.redirect(
+        new URL(`${proto}://${PANEL_HOST}${pathname}${search}`)
+      );
     }
   }
 
