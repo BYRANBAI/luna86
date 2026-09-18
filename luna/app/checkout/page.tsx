@@ -93,7 +93,7 @@ export default function CheckoutPage() {
     const token = localStorage.getItem("guestToken");
     const guestId = localStorage.getItem("guestId");
     if (!token || !guestId) {
-      router.push("/auth?redirect=/checkout");
+      router.push("/menu?tab=profile");
       return;
     }
 
@@ -106,11 +106,11 @@ export default function CheckoutPage() {
         setGuest(data);
         loadAddresses(parseInt(guestId), token);
       } else {
-        router.push("/auth?redirect=/checkout");
+        router.push("/menu?tab=profile");
       }
     } catch (error) {
       console.error("Ошибка загрузки данных гостя:", error);
-      router.push("/auth?redirect=/checkout");
+      router.push("/menu?tab=profile");
     }
   };
 

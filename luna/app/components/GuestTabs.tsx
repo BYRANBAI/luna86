@@ -25,22 +25,74 @@ function normalizePhone(raw: string) {
 
 function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
   const [mode, setMode] = useState<"login" | "register">("login");
+  const [loginBy, setLoginBy] = useState<"password" | "sms">("password");
+  const [step, setStep] = useState<"form" | "code">("form");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function submit(e: React.FormEvent) {
+  function resetMode(next: "login" | "register") {
+    setMode(next);
+    setStep("form");
+    setCode("");
+    setError("");
+    setInfo("");
+  }
+
+  async function sendCode() {
+    setError(""); setLoading(true);
+    try {
+      const r = await fetch("/api/auth/sms/send", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          phone: normalizePhone(phone),
+          purpose: mode === "register" ? "register" : "login",
+          name: mode === "register" ? name : undefined,
+        }),
+      });
+      const data = await r.json();
+      if (!r.ok) { setError(data.error ?? "Не удалось отправить SMS"); return; }
+      setInfo(data.debugCode ? `Код для проверки: ${data.debugCode}` : "Код отправлен по SMS");
+      setStep("code");
+    } finally { setLoading(false); }
+  }
+
+  async function verifyCode(e: React.FormEvent) {
     e.preventDefault();
     setError(""); setLoading(true);
     try {
-      const url = mode === "login" ? "/api/auth/guest-login" : "/api/auth/register";
-      const body = mode === "login"
-        ? { phone: normalizePhone(phone), password }
-        : { name, phone: normalizePhone(phone), password, email: email || undefined };
-      const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      const r = await fetch("/api/auth/sms/verify", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          phone: normalizePhone(phone),
+          code,
+          purpose: mode === "register" ? "register" : "login",
+          name: mode === "register" ? name : undefined,
+        }),
+      });
+      const data = await r.json();
+      if (!r.ok) { setError(data.error ?? "Неверный код"); return; }
+      localStorage.setItem("guestToken", data.token);
+      localStorage.setItem("guestId", String(data.guest.id));
+      onSuccess();
+    } finally { setLoading(false); }
+  }
+
+  async function passwordLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setError(""); setLoading(true);
+    try {
+      const r = await fetch("/api/auth/guest-login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ phone: normalizePhone(phone), password }),
+      });
       const data = await r.json();
       if (!r.ok) { setError(data.error ?? "Ошибка"); return; }
       localStorage.setItem("guestToken", data.token);
@@ -53,23 +105,75 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
     <div style={card}>
       <div style={{ display: "flex", borderRadius: 12, overflow: "hidden", border: "1px solid #333", marginBottom: 16 }}>
         {(["login", "register"] as const).map(t => (
-          <button key={t} type="button" onClick={() => { setMode(t); setError(""); }}
+          <button key={t} type="button" onClick={() => resetMode(t)}
             style={{ flex: 1, padding: "10px 0", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer",
               background: mode === t ? "#E91E63" : "#1A1A1A", color: mode === t ? "#fff" : "#bbb" }}>
             {t === "login" ? "Войти" : "Регистрация"}
           </button>
         ))}
       </div>
-      <form onSubmit={submit}>
-        {mode === "register" && <input style={inp} type="text" placeholder="Ваше имя" value={name} onChange={e => setName(e.target.value)} required />}
-        <input style={inp} type="tel" placeholder="Телефон (+7 999 000-00-00)" value={phone} onChange={e => setPhone(e.target.value)} required />
-        {mode === "register" && <input style={inp} type="email" placeholder="Email (необязательно)" value={email} onChange={e => setEmail(e.target.value)} />}
-        <input style={inp} type="password" placeholder="Пароль" value={password} onChange={e => setPassword(e.target.value)} required />
-        {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
-        <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
-          {loading ? "Подождите…" : mode === "login" ? "Войти" : "Зарегистрироваться"}
-        </button>
-      </form>
+
+      {mode === "register" && step === "form" && (
+        <form onSubmit={e => { e.preventDefault(); void sendCode(); }}>
+          <p style={{ fontSize: 13, color: "#bbb", marginBottom: 12 }}>Подтвердим номер по SMS — так в заказ не попадут чужие телефоны.</p>
+          <input style={inp} type="text" placeholder="Ваше имя" value={name} onChange={e => setName(e.target.value)} required />
+          <input style={inp} type="tel" placeholder="Телефон (+7 999 000-00-00)" value={phone} onChange={e => setPhone(e.target.value)} required />
+          {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+          <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
+            {loading ? "Отправляем…" : "Получить SMS-код"}
+          </button>
+        </form>
+      )}
+
+      {mode === "register" && step === "code" && (
+        <form onSubmit={verifyCode}>
+          <p style={{ fontSize: 13, color: "#bbb", marginBottom: 12 }}>{info || "Введите код из SMS"}</p>
+          <input style={inp} inputMode="numeric" maxLength={4} placeholder="Код из SMS" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 4))} required />
+          {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+          <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
+            {loading ? "Проверяем…" : "Подтвердить номер"}
+          </button>
+          <button type="button" onClick={() => { setStep("form"); setError(""); }} style={{ ...action, width: "100%", marginTop: 8, background: "#333" }}>Изменить номер</button>
+        </form>
+      )}
+
+      {mode === "login" && loginBy === "password" && (
+        <form onSubmit={passwordLogin}>
+          <input style={inp} type="tel" placeholder="Телефон (+7 999 000-00-00)" value={phone} onChange={e => setPhone(e.target.value)} required />
+          <input style={inp} type="password" placeholder="Пароль" value={password} onChange={e => setPassword(e.target.value)} required />
+          {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+          <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
+            {loading ? "Подождите…" : "Войти"}
+          </button>
+          <button type="button" onClick={() => { setLoginBy("sms"); setStep("form"); setError(""); }} style={{ ...action, width: "100%", marginTop: 8, background: "#333" }}>
+            Войти по SMS
+          </button>
+        </form>
+      )}
+
+      {mode === "login" && loginBy === "sms" && step === "form" && (
+        <form onSubmit={e => { e.preventDefault(); void sendCode(); }}>
+          <input style={inp} type="tel" placeholder="Телефон (+7 999 000-00-00)" value={phone} onChange={e => setPhone(e.target.value)} required />
+          {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+          <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
+            {loading ? "Отправляем…" : "Получить SMS-код"}
+          </button>
+          <button type="button" onClick={() => { setLoginBy("password"); setError(""); }} style={{ ...action, width: "100%", marginTop: 8, background: "#333" }}>
+            Войти с паролем
+          </button>
+        </form>
+      )}
+
+      {mode === "login" && loginBy === "sms" && step === "code" && (
+        <form onSubmit={verifyCode}>
+          <p style={{ fontSize: 13, color: "#bbb", marginBottom: 12 }}>{info || "Введите код из SMS"}</p>
+          <input style={inp} inputMode="numeric" maxLength={4} placeholder="Код из SMS" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 4))} required />
+          {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+          <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
+            {loading ? "Проверяем…" : "Войти"}
+          </button>
+        </form>
+      )}
     </div>
   );
 }

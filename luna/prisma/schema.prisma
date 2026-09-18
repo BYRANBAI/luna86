@@ -128,10 +128,23 @@ model Guest {
   segment String @default("Новые")
   lastVisit DateTime?
   createdAt DateTime @default(now())
+  phoneVerified Boolean @default(false)
   addresses GuestAddress[]
   favorites GuestFavorite[]
   bonusHistory BonusTransaction[]
   reviews Review[]
+}
+
+model SmsCode {
+  id        Int      @id @default(autoincrement())
+  phone     String
+  codeHash  String
+  purpose   String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([phone, purpose])
 }
 
 model Order {
