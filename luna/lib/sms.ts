@@ -13,7 +13,7 @@ async function vhRequest(path: string, body: object): Promise<
   { ok: true; data: Record<string, unknown> } | { ok: false; error: string; attempts?: number }
 > {
   const auth = authHeader();
-  if (!auth) return { ok: false, error: "SMS-шлюз не настроен" };
+  if (!auth) return { ok: false, error: "Шлюз проверки номера не настроен" };
 
   const res = await fetch(`${API}${path}`, {
     method: "POST",
@@ -31,18 +31,20 @@ async function vhRequest(path: string, body: object): Promise<
   return { ok: true, data };
 }
 
-export async function startSmsVerification(phone: string): Promise<
-  { ok: true; requestId: string; codeLength: number } | { ok: false; error: string }
+export type VerifyMethod = "sms" | "flash_call";
+
+export async function startVerification(phone: string, method: VerifyMethod = "flash_call"): Promise<
+  { ok: true; requestId: string; codeLength: number; method: VerifyMethod } | { ok: false; error: string }
 > {
   const result = await vhRequest("/v1/verify", {
     phone_number: phone,
-    method: "sms",
+    method,
     expiry_seconds: 300,
   });
   if (!result.ok) return result;
   const requestId = String(result.data.request_id ?? "");
   if (!requestId) return { ok: false, error: "Шлюз не вернул идентификатор проверки" };
-  return { ok: true, requestId, codeLength: Number(result.data.code_length ?? 4) };
+  return { ok: true, requestId, codeLength: Number(result.data.code_length ?? 4), method };
 }
 
 export async function checkSmsCode(requestId: string, code: string): Promise<

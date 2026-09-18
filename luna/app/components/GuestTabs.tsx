@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { formatRuPhone, normalizePhone } from "@/lib/phone";
 import styles from "./GuestTabs.module.css";
 
 export type GuestTab = "menu" | "cart" | "orders" | "profile";
@@ -15,22 +16,32 @@ const action = { padding: "12px 18px", borderRadius: 12, border: "none", backgro
 const statuses: Record<string, string> = { NEW: "Принят", CONFIRMED: "Подтверждён", COOKING: "Готовится", READY: "Готов", DELIVERY_ASSIGNED: "Курьер назначен", IN_DELIVERY: "В пути", DELIVERING: "В пути", DELIVERED: "Доставлен", DONE: "Завершён", CANCELLED: "Отменён" };
 const inp = { width: "100%", border: "1px solid #333", borderRadius: 12, padding: "12px 14px", fontSize: 15, outline: "none", background: "#1A1A1A", color: "#fff", boxSizing: "border-box" as const, marginBottom: 10 };
 
-function normalizePhone(raw: string) {
-  const digits = raw.replace(/\D/g, "");
-  if (digits.length === 11 && digits.startsWith("8")) return "+7" + digits.slice(1);
-  if (digits.length === 11 && digits.startsWith("7")) return "+" + digits;
-  if (digits.length === 10) return "+7" + digits;
-  return raw.trim();
+function PhoneField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <input
+      style={inp}
+      type="tel"
+      inputMode="numeric"
+      autoComplete="tel"
+      placeholder="+7 ("
+      value={value}
+      onFocus={() => { if (!value) onChange("+7 ("); }}
+      onChange={e => onChange(formatRuPhone(e.target.value))}
+      required
+    />
+  );
 }
 
 function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
   const [mode, setMode] = useState<"login" | "register">("login");
-  const [loginBy, setLoginBy] = useState<"password" | "sms">("password");
+  const [loginBy, setLoginBy] = useState<"password" | "call">("call");
   const [step, setStep] = useState<"form" | "code">("form");
-  const [phone, setPhone] = useState("");
+  const [verifyMethod, setVerifyMethod] = useState<"flash_call" | "sms">("flash_call");
+  const [phone, setPhone] = useState("+7 (");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
+  const [codeLength, setCodeLength] = useState(4);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,23 +52,31 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
     setCode("");
     setError("");
     setInfo("");
+    setVerifyMethod("flash_call");
   }
 
-  async function sendCode() {
-    setError(""); setLoading(true);
+  async function sendCode(method: "flash_call" | "sms" = "flash_call") {
+    setError("");
+    const normalized = normalizePhone(phone);
+    if (!normalized) { setError("Введите номер полностью, +7 (XXX) XXX-XX-XX"); return; }
+    setLoading(true);
     try {
       const r = await fetch("/api/auth/sms/send", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          phone: normalizePhone(phone),
+          phone: normalized,
           purpose: mode === "register" ? "register" : "login",
           name: mode === "register" ? name : undefined,
+          method,
         }),
       });
       const data = await r.json();
-      if (!r.ok) { setError(data.error ?? "Не удалось отправить SMS"); return; }
-      setInfo(data.debugCode ? `Код для проверки: ${data.debugCode}` : "Код отправлен по SMS");
+      if (!r.ok) { setError(data.error ?? "Не удалось запросить проверку"); return; }
+      setVerifyMethod(data.method === "sms" ? "sms" : "flash_call");
+      setCodeLength(Number(data.codeLength) || 4);
+      setCode("");
+      setInfo(data.message);
       setStep("code");
     } finally { setLoading(false); }
   }
@@ -114,49 +133,54 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
       </div>
 
       {mode === "register" && step === "form" && (
-        <form onSubmit={e => { e.preventDefault(); void sendCode(); }}>
-          <p style={{ fontSize: 13, color: "#bbb", marginBottom: 12 }}>Подтвердим номер по SMS — так в заказ не попадут чужие телефоны.</p>
+        <form onSubmit={e => { e.preventDefault(); void sendCode("flash_call"); }}>
+          <p style={{ fontSize: 13, color: "#bbb", marginBottom: 12 }}>Позвоним-сбросом: код — последние цифры входящего номера.</p>
           <input style={inp} type="text" placeholder="Ваше имя" value={name} onChange={e => setName(e.target.value)} required />
-          <input style={inp} type="tel" placeholder="Телефон (+7 999 000-00-00)" value={phone} onChange={e => setPhone(e.target.value)} required />
+          <PhoneField value={phone} onChange={setPhone} />
           {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
-            {loading ? "Отправляем…" : "Получить SMS-код"}
+            {loading ? "Звоним…" : "Позвонить мне"}
           </button>
         </form>
       )}
 
       {mode === "register" && step === "code" && (
         <form onSubmit={verifyCode}>
-          <p style={{ fontSize: 13, color: "#bbb", marginBottom: 12 }}>{info || "Введите код из SMS"}</p>
-          <input style={inp} inputMode="numeric" maxLength={8} placeholder="Код из SMS" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))} required />
+          <p style={{ fontSize: 13, color: "#bbb", marginBottom: 12 }}>{info || (verifyMethod === "flash_call" ? "Введите последние цифры входящего номера" : "Введите код из SMS")}</p>
+          <input style={inp} inputMode="numeric" maxLength={codeLength} placeholder={verifyMethod === "flash_call" ? "Последние цифры номера" : "Код из SMS"} value={code} onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, codeLength))} required />
           {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
             {loading ? "Проверяем…" : "Подтвердить номер"}
           </button>
+          {verifyMethod === "flash_call" && (
+            <button type="button" onClick={() => void sendCode("sms")} style={{ ...action, width: "100%", marginTop: 8, background: "#333" }}>
+              Не дозвонились? Получить SMS
+            </button>
+          )}
           <button type="button" onClick={() => { setStep("form"); setError(""); }} style={{ ...action, width: "100%", marginTop: 8, background: "#333" }}>Изменить номер</button>
         </form>
       )}
 
       {mode === "login" && loginBy === "password" && (
         <form onSubmit={passwordLogin}>
-          <input style={inp} type="tel" placeholder="Телефон (+7 999 000-00-00)" value={phone} onChange={e => setPhone(e.target.value)} required />
+          <PhoneField value={phone} onChange={setPhone} />
           <input style={inp} type="password" placeholder="Пароль" value={password} onChange={e => setPassword(e.target.value)} required />
           {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
             {loading ? "Подождите…" : "Войти"}
           </button>
-          <button type="button" onClick={() => { setLoginBy("sms"); setStep("form"); setError(""); }} style={{ ...action, width: "100%", marginTop: 8, background: "#333" }}>
-            Войти по SMS
+          <button type="button" onClick={() => { setLoginBy("call"); setStep("form"); setError(""); }} style={{ ...action, width: "100%", marginTop: 8, background: "#333" }}>
+            Войти звонком
           </button>
         </form>
       )}
 
-      {mode === "login" && loginBy === "sms" && step === "form" && (
-        <form onSubmit={e => { e.preventDefault(); void sendCode(); }}>
-          <input style={inp} type="tel" placeholder="Телефон (+7 999 000-00-00)" value={phone} onChange={e => setPhone(e.target.value)} required />
+      {mode === "login" && loginBy === "call" && step === "form" && (
+        <form onSubmit={e => { e.preventDefault(); void sendCode("flash_call"); }}>
+          <PhoneField value={phone} onChange={setPhone} />
           {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
-            {loading ? "Отправляем…" : "Получить SMS-код"}
+            {loading ? "Звоним…" : "Позвонить мне"}
           </button>
           <button type="button" onClick={() => { setLoginBy("password"); setError(""); }} style={{ ...action, width: "100%", marginTop: 8, background: "#333" }}>
             Войти с паролем
@@ -164,14 +188,19 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
         </form>
       )}
 
-      {mode === "login" && loginBy === "sms" && step === "code" && (
+      {mode === "login" && loginBy === "call" && step === "code" && (
         <form onSubmit={verifyCode}>
-          <p style={{ fontSize: 13, color: "#bbb", marginBottom: 12 }}>{info || "Введите код из SMS"}</p>
-          <input style={inp} inputMode="numeric" maxLength={8} placeholder="Код из SMS" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))} required />
+          <p style={{ fontSize: 13, color: "#bbb", marginBottom: 12 }}>{info || (verifyMethod === "flash_call" ? "Введите последние цифры входящего номера" : "Введите код из SMS")}</p>
+          <input style={inp} inputMode="numeric" maxLength={codeLength} placeholder={verifyMethod === "flash_call" ? "Последние цифры номера" : "Код из SMS"} value={code} onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, codeLength))} required />
           {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
             {loading ? "Проверяем…" : "Войти"}
           </button>
+          {verifyMethod === "flash_call" && (
+            <button type="button" onClick={() => void sendCode("sms")} style={{ ...action, width: "100%", marginTop: 8, background: "#333" }}>
+              Не дозвонились? Получить SMS
+            </button>
+          )}
         </form>
       )}
     </div>

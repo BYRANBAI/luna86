@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const name = String(body.name ?? "").trim();
 
     if (!phone || code.length < 4 || code.length > 8) {
-      return NextResponse.json({ error: "Введите код из SMS" }, { status: 400 });
+      return NextResponse.json({ error: "Введите код из звонка или SMS" }, { status: 400 });
     }
 
     const row = await db.smsCode.findFirst({
@@ -28,7 +28,10 @@ export async function POST(req: NextRequest) {
     }
 
     await db.smsCode.update({ where: { id: row.id }, data: { attempts: { increment: 1 } } });
-    const checked = await checkSmsCode(row.codeHash, code);
+    const requestId = row.codeHash.startsWith("sms|") || row.codeHash.startsWith("flash_call|")
+      ? row.codeHash.slice(row.codeHash.indexOf("|") + 1)
+      : row.codeHash;
+    const checked = await checkSmsCode(requestId, code);
     if (!checked.ok) {
       return NextResponse.json({ error: checked.error }, { status: 400 });
     }

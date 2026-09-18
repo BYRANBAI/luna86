@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { normalizePhone } from "@/lib/phone";
-import { startSmsVerification } from "@/lib/sms";
+import { startVerification, type VerifyMethod } from "@/lib/sms";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const phone = normalizePhone(String(body.phone ?? ""));
+    const method: VerifyMethod = body.method === "sms" ? "sms" : "flash_call";
     const purpose = body.purpose === "login" ? "login" : "register";
     const name = String(body.name ?? "").trim();
 
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
 
     const existing = await db.guest.findUnique({ where: { phone } });
     if (purpose === "register" && existing?.registered) {
-      return NextResponse.json({ error: "Этот номер уже зарегистрирован. Войдите по SMS или паролю." }, { status: 400 });
+      return NextResponse.json({ error: "Этот номер уже зарегистрирован. Войдите по звонку или паролю." }, { status: 400 });
     }
     if (purpose === "login" && !existing) {
       return NextResponse.json({ error: "Номер не найден. Сначала зарегистрируйтесь." }, { status: 400 });
@@ -29,11 +30,16 @@ export async function POST(req: NextRequest) {
       where: { phone, purpose, createdAt: { gt: new Date(Date.now() - 60_000) } },
       orderBy: { createdAt: "desc" },
     });
-    if (recent) {
-      return NextResponse.json({ error: "Код уже отправлен. Подождите минуту." }, { status: 429 });
+    const recentMethod = recent?.codeHash.startsWith("sms|")
+      ? "sms"
+      : recent?.codeHash.startsWith("flash_call|")
+        ? "flash_call"
+        : null;
+    if (recent && (recentMethod === method || (method === "flash_call" && recentMethod == null))) {
+      return NextResponse.json({ error: "Код уже запрошен. Подождите минуту." }, { status: 429 });
     }
 
-    const sent = await startSmsVerification(phone);
+    const sent = await startVerification(phone, method);
     if (!sent.ok) {
       return NextResponse.json({ error: sent.error }, { status: 503 });
     }
@@ -43,15 +49,18 @@ export async function POST(req: NextRequest) {
       data: {
         phone,
         purpose,
-        codeHash: sent.requestId,
+        codeHash: `${sent.method}|${sent.requestId}`,
         expiresAt: new Date(Date.now() + 5 * 60_000),
       },
     });
 
     return NextResponse.json({
       ok: true,
-      message: "Код отправлен по SMS",
+      method: sent.method,
       codeLength: sent.codeLength,
+      message: sent.method === "flash_call"
+        ? "Сейчас поступит звонок-сброс. Код — последние цифры входящего номера."
+        : "Код отправлен по SMS",
     });
   } catch (error) {
     console.error("SMS send error:", error);
