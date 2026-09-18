@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import styles from "./menu.module.css";
 import ItemModal from "@/app/components/ItemModal";
+import MapModal from "@/app/components/MapModal";
 import { AccountPanel, CartPanel, type GuestTab } from "@/app/components/GuestTabs";
 
 interface Modifier { id: number; name: string; price: number; }
@@ -76,6 +77,7 @@ export default function MenuPage() {
   const [guest, setGuest] = useState<Guest | null>(null);
   const [search, setSearch] = useState("");
   const [modalItem, setModalItem] = useState<Item | null>(null);
+  const [showMap, setShowMap] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [deliveryType, setDeliveryType] = useState<"delivery"|"pickup">("delivery");
   const sectionRefs = useRef<Record<number, HTMLElement | null>>({});
@@ -167,12 +169,12 @@ export default function MenuPage() {
 
             <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 12 }}>
             {/* Address */}
-            <button style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: 0, flex: 1, minWidth: 0 }}>
+            <button onClick={() => setShowMap(true)} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: 0, flex: 1, minWidth: 0 }}>
               <span style={{ fontSize: 16 }}>📍</span>
               <div style={{ textAlign: "left", minWidth: 0 }}>
                 <div style={{ fontSize: 12, color: GRAY }}>Доставка</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: DARK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  Укажите адрес ▾
+                  Карта и адрес ▾
                 </div>
               </div>
             </button>
@@ -388,6 +390,7 @@ export default function MenuPage() {
 
       {/* MODAL */}
       <ItemModal item={modalItem} isOpen={modalOpen} onClose={() => { setModalItem(null); setModalOpen(false); }} onAddToCart={handleAddToCartFromModal} />
+      <MapModal isOpen={showMap} onClose={() => setShowMap(false)} />
     </div>
   );
 }
