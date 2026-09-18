@@ -1,19 +1,5 @@
 "use client";
-
-const CAFE_INFO = {
-  name: "Кафе «Луна»",
-  address: "ул. Таёжная, 11, г. Покачи",
-  city: "ХМАО — Югра",
-  lat: 61.744247,
-  lon: 75.593837,
-  phone: "+7 (929) 298-28-28",
-  phoneHref: "+79292982828",
-  hours: "Пн–Вс 10:00–23:00",
-  gisFirmId: "70000001111680873",
-  gisUrl: "https://2gis.ru/pokachi/firm/70000001111680873",
-  gisRating: "5,0",
-  gisReviews: 11,
-};
+import { CAFE_INFO } from "@/lib/cafe";
 
 const PINK = "#E91E63";
 const GRAY = "#888";
@@ -23,9 +9,9 @@ const GIS_GREEN = "#00B341";
 export default function MapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   if (!isOpen) return null;
 
-  const { lat, lon } = CAFE_INFO;
-  const mapSrc = `https://yandex.ru/map-widget/v1/?ll=${lon}%2C${lat}&z=17&pt=${lon}%2C${lat},pm2rdm`;
-  const routeUrl = `${CAFE_INFO.gisUrl}/tab/howGetHere`;
+  const q = encodeURIComponent(CAFE_INFO.query);
+  const mapSrc = `https://yandex.ru/map-widget/v1/?mode=search&text=${q}&z=18`;
+  const routeUrl = `https://yandex.ru/maps/?rtext=~${q}&rtt=auto`;
 
   return (
     <div

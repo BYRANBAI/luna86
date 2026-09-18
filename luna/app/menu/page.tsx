@@ -5,6 +5,7 @@ import styles from "./menu.module.css";
 import ItemModal from "@/app/components/ItemModal";
 import MapModal from "@/app/components/MapModal";
 import { AccountPanel, CartPanel, type GuestTab } from "@/app/components/GuestTabs";
+import { CAFE_INFO } from "@/lib/cafe";
 
 interface Modifier { id: number; name: string; price: number; }
 interface Item {
@@ -75,6 +76,7 @@ export default function MenuPage() {
   const [activeCat, setActiveCat] = useState<number | null>(null);
   const [cart, setCart] = useState<{itemId:number;qty:number;price:number;name:string}[]>([]);
   const [guest, setGuest] = useState<Guest | null>(null);
+  const [savedAddress, setSavedAddress] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [modalItem, setModalItem] = useState<Item | null>(null);
   const [showMap, setShowMap] = useState(false);
@@ -100,9 +102,20 @@ export default function MenuPage() {
   const loadGuest = () => {
     const token = localStorage.getItem("guestToken");
     const guestId = localStorage.getItem("guestId");
-    if (token && guestId)
-      fetch(`/api/guests/${guestId}`, { headers: { Authorization: `Bearer ${token}` } })
-        .then(r => r.json()).then(setGuest).catch(() => {});
+    if (!token || !guestId) return;
+    const headers = { Authorization: `Bearer ${token}` };
+    fetch(`/api/guests/${guestId}`, { headers })
+      .then(r => r.json()).then(setGuest).catch(() => {});
+    fetch(`/api/guests/${guestId}/addresses`, { headers })
+      .then(r => r.ok ? r.json() : [])
+      .then((list: { street: string; building: string; apartment?: string; isDefault?: boolean }[]) => {
+        if (!Array.isArray(list) || !list.length) return;
+        const addr = list.find(a => a.isDefault) ?? list[0];
+        const line = [addr.street, addr.building, addr.apartment ? `кв. ${addr.apartment}` : ""]
+          .filter(Boolean).join(", ");
+        setSavedAddress(line);
+      })
+      .catch(() => {});
   };
 
   const saveCart = (c: typeof cart) => { setCart(c); localStorage.setItem("cart", JSON.stringify(c)); };
@@ -167,17 +180,32 @@ export default function MenuPage() {
               <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: PINK, letterSpacing: 2 }}>LUNA</span>
             </Link>
 
-            <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 12 }}>
-            {/* Address */}
-            <button onClick={() => setShowMap(true)} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: 0, flex: 1, minWidth: 0 }}>
-              <span style={{ fontSize: 16 }}>📍</span>
-              <div style={{ textAlign: "left", minWidth: 0 }}>
+            <div style={{ flex: 1, display: "flex", alignItems: "flex-start", gap: 12 }}>
+            {/* Address + cafe contacts */}
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 6, flex: 1, minWidth: 0 }}>
+              <span style={{ fontSize: 16, lineHeight: "18px" }}>📍</span>
+              <div style={{ textAlign: "left", minWidth: 0, flex: 1 }}>
                 <div style={{ fontSize: 12, color: GRAY }}>Доставка</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: DARK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  Карта и адрес ▾
+                  {savedAddress ?? "Карта и адрес"}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
+                  <span style={{ fontSize: 12, color: GRAY, whiteSpace: "nowrap" }}>🕐 {CAFE_INFO.hours}</span>
+                  <a href={`tel:${CAFE_INFO.phoneHref}`} style={{ fontSize: 12, color: PINK, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
+                    {CAFE_INFO.phone}
+                  </a>
+                  <button
+                    onClick={() => setShowMap(true)}
+                    style={{
+                      background: PINK, color: "#fff", border: "none", borderRadius: 8,
+                      padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
+                    }}
+                  >
+                    Карты
+                  </button>
                 </div>
               </div>
-            </button>
+            </div>
 
             {/* Profile / Auth */}
             {guest ? (
