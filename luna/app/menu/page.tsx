@@ -100,9 +100,16 @@ export default function MenuPage() {
         frame = 0;
         setCompact(window.scrollY > 110);
 
+        // Активна секция, чей верх ближе всего снизу к закреплённой шапке.
         let current: number | null = null;
+        let bestTop = -Infinity;
         for (const [id, el] of Object.entries(sectionRefs.current)) {
-          if (el && el.getBoundingClientRect().top <= 150) current = Number(id);
+          if (!el) continue;
+          const top = el.getBoundingClientRect().top;
+          if (top <= 150 && top > bestTop) {
+            bestTop = top;
+            current = Number(id);
+          }
         }
         if (current !== null) setActiveCat(current);
       });
@@ -317,7 +324,7 @@ export default function MenuPage() {
           const catItems = items.filter(i => i.categoryId === cat.id);
           if (!catItems.length) return null;
           return (
-            <section key={cat.id} ref={el => { sectionRefs.current[cat.id] = el; }} style={{ marginBottom: 32, scrollMarginTop: 130 }}>
+            <section key={cat.id} ref={el => { sectionRefs.current[cat.id] = el; }} style={{ marginBottom: 32, scrollMarginTop: 108 }}>
               <h2 style={{ fontWeight: 800, fontSize: 22, color: THEME.text, margin: "0 0 14px", letterSpacing: "-0.03em" }}>
                 {CAT_ICONS[cat.name] ?? "🍴"} {cat.name}
               </h2>
