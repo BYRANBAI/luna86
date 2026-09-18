@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import { db } from "@/lib/db";
 import { normalizePhone } from "@/lib/phone";
-import { sendSms } from "@/lib/sms";
-
-function hashCode(phone: string, code: string) {
-  const secret = process.env.JWT_ACCESS_SECRET ?? "luna-sms-secret";
-  return crypto.createHmac("sha256", secret).update(`${phone}:${code}`).digest("hex");
-}
+import { startSmsVerification } from "@/lib/sms";
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,28 +33,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Код уже отправлен. Подождите минуту." }, { status: 429 });
     }
 
-    const code = String(crypto.randomInt(1000, 10000));
+    const sent = await startSmsVerification(phone);
+    if (!sent.ok) {
+      return NextResponse.json({ error: sent.error }, { status: 503 });
+    }
+
     await db.smsCode.deleteMany({ where: { phone, purpose } });
     await db.smsCode.create({
       data: {
         phone,
         purpose,
-        codeHash: hashCode(phone, code),
+        codeHash: sent.requestId,
         expiresAt: new Date(Date.now() + 5 * 60_000),
       },
     });
 
-    const sent = await sendSms(phone, `Луна: код ${code}. Никому не сообщайте.`);
-    if (!sent.ok) {
-      return NextResponse.json({ error: sent.error }, { status: 503 });
-    }
-
-    const payload: { ok: true; message: string; debugCode?: string } = {
+    return NextResponse.json({
       ok: true,
       message: "Код отправлен по SMS",
-    };
-    if (sent.dev) payload.debugCode = code;
-    return NextResponse.json(payload);
+      codeLength: sent.codeLength,
+    });
   } catch (error) {
     console.error("SMS send error:", error);
     return NextResponse.json({ error: "Не удалось отправить код" }, { status: 500 });

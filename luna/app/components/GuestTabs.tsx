@@ -128,7 +128,7 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
       {mode === "register" && step === "code" && (
         <form onSubmit={verifyCode}>
           <p style={{ fontSize: 13, color: "#bbb", marginBottom: 12 }}>{info || "Введите код из SMS"}</p>
-          <input style={inp} inputMode="numeric" maxLength={4} placeholder="Код из SMS" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 4))} required />
+          <input style={inp} inputMode="numeric" maxLength={8} placeholder="Код из SMS" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))} required />
           {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
             {loading ? "Проверяем…" : "Подтвердить номер"}
@@ -167,7 +167,7 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
       {mode === "login" && loginBy === "sms" && step === "code" && (
         <form onSubmit={verifyCode}>
           <p style={{ fontSize: 13, color: "#bbb", marginBottom: 12 }}>{info || "Введите код из SMS"}</p>
-          <input style={inp} inputMode="numeric" maxLength={4} placeholder="Код из SMS" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 4))} required />
+          <input style={inp} inputMode="numeric" maxLength={8} placeholder="Код из SMS" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))} required />
           {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
             {loading ? "Проверяем…" : "Войти"}

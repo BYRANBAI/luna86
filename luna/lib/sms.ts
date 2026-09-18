@@ -1,21 +1,60 @@
-import { phoneToSmsRu } from "@/lib/phone";
+const API = "https://api.verificahub.ru";
 
-export async function sendSms(phone: string, text: string): Promise<{ ok: true; dev?: boolean } | { ok: false; error: string }> {
-  const apiId = process.env.SMSRU_API_ID?.trim();
-  if (!apiId) {
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[SMS DEV]", phone, text);
-      return { ok: true, dev: true };
-    }
-    return { ok: false, error: "SMS-шлюз не настроен" };
+function authHeader() {
+  const key = process.env.VERIFICAHUB_API_KEY?.trim();
+  const secret = process.env.VERIFICAHUB_API_SECRET?.trim();
+  if (!key || !secret) return null;
+  return "Basic " + Buffer.from(`${key}:${secret}`).toString("base64");
+}
+
+type Problem = { detail?: string; error_code?: string; attempts_remaining?: number };
+
+async function vhRequest(path: string, body: object): Promise<
+  { ok: true; data: Record<string, unknown> } | { ok: false; error: string; attempts?: number }
+> {
+  const auth = authHeader();
+  if (!auth) return { ok: false, error: "SMS-шлюз не настроен" };
+
+  const res = await fetch(`${API}${path}`, {
+    method: "POST",
+    headers: { Authorization: auth, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({})) as Record<string, unknown> & Problem;
+  if (!res.ok) {
+    return {
+      ok: false,
+      error: data.detail || "Ошибка SMS-шлюза",
+      attempts: typeof data.attempts_remaining === "number" ? data.attempts_remaining : undefined,
+    };
   }
+  return { ok: true, data };
+}
 
-  const to = phoneToSmsRu(phone);
-  const url = `https://sms.ru/sms/send?api_id=${encodeURIComponent(apiId)}&to=${encodeURIComponent(to)}&msg=${encodeURIComponent(text)}&json=1`;
-  const res = await fetch(url);
-  const data = await res.json().catch(() => null) as { status?: string; status_text?: string } | null;
-  if (!res.ok || data?.status !== "OK") {
-    return { ok: false, error: data?.status_text || "Не удалось отправить SMS" };
+export async function startSmsVerification(phone: string): Promise<
+  { ok: true; requestId: string; codeLength: number } | { ok: false; error: string }
+> {
+  const result = await vhRequest("/v1/verify", {
+    phone_number: phone,
+    method: "sms",
+    expiry_seconds: 300,
+  });
+  if (!result.ok) return result;
+  const requestId = String(result.data.request_id ?? "");
+  if (!requestId) return { ok: false, error: "Шлюз не вернул идентификатор проверки" };
+  return { ok: true, requestId, codeLength: Number(result.data.code_length ?? 4) };
+}
+
+export async function checkSmsCode(requestId: string, code: string): Promise<
+  { ok: true } | { ok: false; error: string }
+> {
+  const result = await vhRequest("/v1/verify/check", { request_id: requestId, code });
+  if (!result.ok) {
+    const extra = result.attempts != null ? ` Осталось попыток: ${result.attempts}.` : "";
+    return { ok: false, error: result.error + extra };
+  }
+  if (String(result.data.status ?? "") !== "verified") {
+    return { ok: false, error: "Код не подтверждён" };
   }
   return { ok: true };
 }

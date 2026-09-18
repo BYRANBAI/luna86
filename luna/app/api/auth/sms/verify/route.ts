@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import { db } from "@/lib/db";
 import { normalizePhone } from "@/lib/phone";
 import { generateTokens } from "@/lib/auth";
-
-function hashCode(phone: string, code: string) {
-  const secret = process.env.JWT_ACCESS_SECRET ?? "luna-sms-secret";
-  return crypto.createHmac("sha256", secret).update(`${phone}:${code}`).digest("hex");
-}
+import { checkSmsCode } from "@/lib/sms";
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,8 +12,8 @@ export async function POST(req: NextRequest) {
     const purpose = body.purpose === "login" ? "login" : "register";
     const name = String(body.name ?? "").trim();
 
-    if (!phone || code.length !== 4) {
-      return NextResponse.json({ error: "Введите 4-значный код из SMS" }, { status: 400 });
+    if (!phone || code.length < 4 || code.length > 8) {
+      return NextResponse.json({ error: "Введите код из SMS" }, { status: 400 });
     }
 
     const row = await db.smsCode.findFirst({
@@ -33,8 +28,9 @@ export async function POST(req: NextRequest) {
     }
 
     await db.smsCode.update({ where: { id: row.id }, data: { attempts: { increment: 1 } } });
-    if (row.codeHash !== hashCode(phone, code)) {
-      return NextResponse.json({ error: "Неверный код" }, { status: 400 });
+    const checked = await checkSmsCode(row.codeHash, code);
+    if (!checked.ok) {
+      return NextResponse.json({ error: checked.error }, { status: 400 });
     }
 
     await db.smsCode.deleteMany({ where: { phone, purpose } });
