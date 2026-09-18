@@ -20,18 +20,11 @@ const GRAY = "#888";
 const DARK = "#1a1a1a";
 const GIS_GREEN = "#00B341";
 
-function gisWidgetSrc() {
-  const opt = {
-    pos: { lat: CAFE_INFO.lat, lon: CAFE_INFO.lon, zoom: 16 },
-    opt: { city: "pokachi" },
-    org: CAFE_INFO.gisFirmId,
-  };
-  return `https://widgets.2gis.com/widget?type=firmsonmap&opt=${encodeURIComponent(JSON.stringify(opt))}`;
-}
-
 export default function MapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   if (!isOpen) return null;
 
+  const { lat, lon } = CAFE_INFO;
+  const mapSrc = `https://yandex.ru/map-widget/v1/?ll=${lon}%2C${lat}&z=17&pt=${lon}%2C${lat},pm2rdm`;
   const routeUrl = `${CAFE_INFO.gisUrl}/tab/howGetHere`;
 
   return (
@@ -90,11 +83,10 @@ export default function MapModal({ isOpen, onClose }: { isOpen: boolean; onClose
           </div>
         </a>
 
-        {/* Карта 2ГИС */}
         <div style={{ borderRadius: 16, overflow: "hidden", border: "1px solid #F0F0F0" }}>
           <iframe
-            title="Карта 2ГИС"
-            src={gisWidgetSrc()}
+            title="Карта проезда"
+            src={mapSrc}
             width="100%"
             height="260"
             frameBorder="0"
