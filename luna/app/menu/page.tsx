@@ -73,12 +73,10 @@ export default function MenuPage() {
   const [activeCat, setActiveCat] = useState<number | null>(null);
   const [cart, setCart] = useState<{itemId:number;qty:number;price:number;name:string}[]>([]);
   const [guest, setGuest] = useState<Guest | null>(null);
-  const [savedAddress, setSavedAddress] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [modalItem, setModalItem] = useState<Item | null>(null);
   const [showMap, setShowMap] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [deliveryType, setDeliveryType] = useState<"delivery"|"pickup">("delivery");
   const sectionRefs = useRef<Record<number, HTMLElement | null>>({});
   const catBarRef = useRef<HTMLDivElement>(null);
 
@@ -103,16 +101,6 @@ export default function MenuPage() {
     const headers = { Authorization: `Bearer ${token}` };
     fetch(`/api/guests/${guestId}`, { headers })
       .then(r => r.json()).then(setGuest).catch(() => {});
-    fetch(`/api/guests/${guestId}/addresses`, { headers })
-      .then(r => r.ok ? r.json() : [])
-      .then((list: { street: string; building: string; apartment?: string; isDefault?: boolean }[]) => {
-        if (!Array.isArray(list) || !list.length) return;
-        const addr = list.find(a => a.isDefault) ?? list[0];
-        const line = [addr.street, addr.building, addr.apartment ? `кв. ${addr.apartment}` : ""]
-          .filter(Boolean).join(", ");
-        setSavedAddress(line);
-      })
-      .catch(() => {});
   };
 
   const saveCart = (c: typeof cart) => { setCart(c); localStorage.setItem("cart", JSON.stringify(c)); };
@@ -173,11 +161,8 @@ export default function MenuPage() {
               <span className={styles.logoText}>LUNA</span>
             </Link>
             <div className={styles.meta}>
-              <span aria-hidden="true">📍</span>
-              <span className={styles.metaAddr}>{savedAddress ?? "Адрес"}</span>
               <span className={styles.metaHours}>{CAFE_INFO.hours.replace("Пн–Вс ", "")}</span>
               <a href={`tel:${CAFE_INFO.phoneHref}`} className={styles.metaPhone}>{CAFE_INFO.phone}</a>
-              <button type="button" className={styles.mapBtn} onClick={() => setShowMap(true)}>Карта</button>
             </div>
             {guest ? (
               <button type="button" className={styles.guestBtn} onClick={() => selectTab("profile")}>
@@ -191,10 +176,13 @@ export default function MenuPage() {
             )}
           </div>
           <div className={styles.modeSearch}>
-            <div className={styles.mode}>
-              <button type="button" data-on={deliveryType === "delivery"} onClick={() => setDeliveryType("delivery")}>🚙 Доставка</button>
-              <button type="button" data-on={deliveryType === "pickup"} onClick={() => setDeliveryType("pickup")}>🏃 Самовывоз</button>
-            </div>
+            <button type="button" className={styles.placeBtn} onClick={() => setShowMap(true)}>
+              <span className={styles.placePin} aria-hidden="true">📍</span>
+              <span className={styles.placeText}>
+                <b>Мы здесь</b>
+                <small>{CAFE_INFO.address.replace(", г. Покачи", "")} · карта</small>
+              </span>
+            </button>
             <input className={styles.search} type="text" placeholder="🔍 Найти блюдо..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
