@@ -47,6 +47,8 @@
   background: #EFE6D8;
   border-bottom: none;
   overflow: hidden;
+  max-height: 64px;
+  transition: max-height 260ms var(--ease), padding 260ms var(--ease), opacity 200ms var(--ease);
 }
 
 .hoursFull {
@@ -62,6 +64,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 8px 12px 6px;
+  transition: padding 260ms var(--ease);
 }
 
 .headerTop {
@@ -82,11 +85,13 @@
 .logoMark {
   font-size: 22px;
   line-height: 1;
+  transition: font-size 240ms var(--ease);
 }
 
 .logoText {
   font-family: "Playfair Display", serif;
   font-size: 22px;
+  transition: font-size 240ms var(--ease);
   font-weight: 700;
   color: #3A3A3A;
   letter-spacing: 1px;
@@ -210,6 +215,8 @@
   gap: 6px;
   margin-top: 4px;
   min-width: 0;
+  max-height: 60px;
+  transition: max-height 260ms var(--ease), margin-top 260ms var(--ease), opacity 200ms var(--ease);
 }
 
 .search {
@@ -236,36 +243,53 @@
   box-shadow: 0 0 0 3px rgba(245, 130, 32, 0.16);
 }
 
+/* Категории — одна строка с горизонтальной прокруткой.
+   safe center центрирует, пока чипы влезают, и не прячет первый чип при переполнении. */
 .cats {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0;
-  padding: 0 8px 2px;
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 7px 12px;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  justify-content: safe center;
   border-top: 1px solid #E8DFD2;
   max-width: 100%;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 12px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
 }
 
+.cats::-webkit-scrollbar {
+  display: none;
+}
+
 .cats button {
-  padding: 9px 16px;
-  margin: 4px 3px;
-  min-height: 40px;
-  border: none;
+  flex: 0 0 auto;
+  scroll-snap-align: center;
+  padding: 7px 14px;
+  margin: 0;
+  min-height: 36px;
+  border: 1px solid #E8DFD2;
   border-radius: 999px;
-  background: transparent;
+  background: #FBF7F1;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
-  color: #8A8178;
+  color: #6B5344;
   white-space: nowrap;
-  transition: background 200ms var(--ease), color 200ms var(--ease), transform 160ms var(--ease);
+  transition: background 200ms var(--ease), color 200ms var(--ease), border-color 200ms var(--ease),
+    transform 160ms var(--ease), box-shadow 200ms var(--ease);
 }
 
 .cats button:hover {
   background: #EFE6D8;
+  border-color: #DCCFBB;
   color: #1C2430;
 }
 
@@ -277,7 +301,36 @@
   font-weight: 700;
   color: #fff;
   background: #F58220;
+  border-color: #F58220;
   box-shadow: var(--shadow-accent);
+}
+
+/* Сжатая шапка при прокрутке: полоса категорий остаётся закреплённой,
+   часы работы и поиск убираются, чтобы не занимать экран. */
+.header[data-compact="true"] .hoursBar {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.header[data-compact="true"] .modeSearch {
+  max-height: 0;
+  margin-top: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.header[data-compact="true"] .headerInner {
+  padding-top: 6px;
+  padding-bottom: 0;
+}
+
+.header[data-compact="true"] .logoMark,
+.header[data-compact="true"] .logoText {
+  font-size: 19px;
 }
 
 .productGrid {
@@ -842,13 +895,14 @@
   }
 
   .cats {
-    padding: 0 6px 2px;
+    padding: 6px 10px;
+    gap: 6px;
   }
 
   .cats button {
-    padding: 8px 13px;
-    margin: 3px 2px;
-    min-height: 38px;
+    padding: 7px 12px;
+    margin: 0;
+    min-height: 34px;
     font-size: 13px;
   }
 
