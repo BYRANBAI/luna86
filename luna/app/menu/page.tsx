@@ -155,32 +155,33 @@ export default function MenuPage() {
     <div className={styles.page} style={{ background: BG, minHeight: "100vh", fontFamily: "'Inter', -apple-system, sans-serif" }}>
 
       <header className={styles.header}>
+        <div className={styles.hoursBar}>
+          <span className={styles.hoursFull}>{CAFE_INFO.hoursShort}</span>
+          <span className={styles.hoursMobile}>
+            <span>{CAFE_INFO.hoursWeekday}</span>
+            <span>{CAFE_INFO.hoursWeekend}</span>
+          </span>
+        </div>
         <div className={styles.headerInner}>
           <div className={styles.headerTop}>
             <Link href="/" className={styles.logo}>
               <span className={styles.logoMark}>🌙</span>
               <span className={styles.logoText}>LUNA</span>
             </Link>
-            <div className={styles.meta}>
-              <span className={styles.metaHours}>{CAFE_INFO.hoursShort}</span>
+            <div className={styles.contactFrame}>
+              <button type="button" className={styles.placeBtn} onClick={() => setShowMap(true)} aria-label={`Мы здесь, ${CAFE_INFO.address}`}>
+                <span className={styles.placePin} aria-hidden="true">📍</span>
+                <span className={styles.placeText}>
+                  <b>{CAFE_INFO.address.replace(", г. Покачи", "")}</b>
+                </span>
+              </button>
+              <a href={`tel:${CAFE_INFO.phoneHref}`} className={styles.phoneBtn} aria-label={`Позвонить ${CAFE_INFO.phone}`}>
+                <span className={styles.placePin} aria-hidden="true">📞</span>
+                <span className={styles.placeText}>
+                  <b>{CAFE_INFO.phone}</b>
+                </span>
+              </a>
             </div>
-            <a href={`tel:${CAFE_INFO.phoneHref}`} className={styles.phoneBtn}>
-              <span className={styles.placePin} aria-hidden="true">📞</span>
-              <span className={styles.placeText}>
-                <b>Связаться</b>
-                <small>{CAFE_INFO.phone}</small>
-              </span>
-            </a>
-          </div>
-          <div className={styles.modeSearch}>
-            <button type="button" className={styles.placeBtn} onClick={() => setShowMap(true)}>
-              <span className={styles.placePin} aria-hidden="true">📍</span>
-              <span className={styles.placeText}>
-                <b>Мы здесь</b>
-                <small>{CAFE_INFO.address.replace(", г. Покачи", "")}</small>
-              </span>
-            </button>
-            <input className={styles.search} type="text" placeholder="🔍 Найти блюдо..." value={search} onChange={e => setSearch(e.target.value)} />
             {!guest && (
               <button type="button" className={styles.loginTab} onClick={() => selectTab("profile")}>
                 <span className={styles.placePin} aria-hidden="true">👤</span>
@@ -189,6 +190,9 @@ export default function MenuPage() {
                 </span>
               </button>
             )}
+          </div>
+          <div className={styles.modeSearch}>
+            <input className={styles.search} type="text" placeholder="🔍 Найти блюдо..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
         {!search && (
