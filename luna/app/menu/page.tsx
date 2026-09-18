@@ -222,8 +222,8 @@ export default function MenuPage() {
 
         {/* Category tabs */}
         {!search && (
-          <div ref={catBarRef} style={{ overflowX: "auto", scrollbarWidth: "none", borderTop: "1px solid #F0F0F0" }}>
-            <div style={{ display: "flex", gap: 0, padding: "0 8px", height: 44, alignItems: "center", width: "max-content" }}>
+          <div ref={catBarRef} style={{ borderTop: "1px solid #F0F0F0" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 0", padding: "4px 8px", alignItems: "center", justifyContent: "center" }}>
               {categories.map(cat => (
                 <button key={cat.id} data-cat={cat.id} onClick={() => scrollToCat(cat.id)}
                   style={{
