@@ -50,7 +50,7 @@ async function refreshGuestAccess(): Promise<string | null> {
 
 export async function guestFetch(input: RequestInfo | URL, init: RequestInit = {}) {
   const headers = guestAuthHeaders(init.headers);
-  let res = await fetch(input, { ...init, headers });
+  const res = await fetch(input, { ...init, headers });
   if (res.status !== 401) return res;
   const next = await refreshGuestAccess();
   if (!next) return res;

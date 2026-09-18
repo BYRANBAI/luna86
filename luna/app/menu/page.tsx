@@ -4,16 +4,18 @@ import Link from "next/link";
 import styles from "./menu.module.css";
 import ItemModal from "@/app/components/ItemModal";
 import MapModal from "@/app/components/MapModal";
+import PromoCarousel from "@/app/components/PromoCarousel";
 import { AccountPanel, CartPanel, type GuestTab } from "@/app/components/GuestTabs";
 import { CAFE_INFO } from "@/lib/cafe";
 import { THEME } from "@/lib/theme";
 import { guestFetch } from "@/lib/guest-session";
 
 interface Modifier { id: number; name: string; price: number; }
+interface ModifierGroup { id: number; name: string; min: number; max: number; options: Modifier[]; }
 interface Item {
   id: number; name: string; description: string; price: number;
   deliveryPrice?: number; photo: string; categoryId: number;
-  labels: string; calories?: number; modifiers?: Modifier[];
+  labels: string; calories?: number; modifiers?: Modifier[]; modifierGroups?: ModifierGroup[];
 }
 interface Category { id: number; name: string; color: string; }
 interface Guest { id: number; name: string; bonuses: number; }
@@ -21,6 +23,7 @@ interface Guest { id: number; name: string; bonuses: number; }
 const CAT_ICONS: Record<string, string> = {
   "Запечённые роллы": "🔥", "Классические роллы": "🍱", "Горячие роллы": "♨️",
   "Маки": "🍣", "Бургеры": "🍔", "Салаты": "🥗", "Супы": "🍜",
+  "Пицца": "🍕", "Узбекская кухня": "🍲",
   "Кофе и напитки": "☕", "Завтраки": "🍳", "Основные блюда": "🍽️",
   "Десерты": "🍰", "Комбо": "🎁",
 };
@@ -30,17 +33,14 @@ const BG = THEME.bg;
 
 // Функция генерации градиентов для placeholder изображений
 const getPlaceholderGradient = (name: string) => {
+  // Тёплые заглушки в тон кремово-оранжевой палитре — для блюд без фото
   const gradients = [
-    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-    "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-    "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-    "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-    "linear-gradient(135deg, #30cfd0 0%, #330867 100%)",
-    "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
-    "linear-gradient(135deg, #ff9a56 0%, #ff6a88 100%)",
-    "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
-    "linear-gradient(135deg, #ff6e7f 0%, #bfe9ff 100%)",
+    "linear-gradient(135deg, #F7EFE3 0%, #E9D8BE 100%)",
+    "linear-gradient(135deg, #FCE9D2 0%, #F3C99A 100%)",
+    "linear-gradient(135deg, #F4EDE2 0%, #DFCBB0 100%)",
+    "linear-gradient(135deg, #FBE3C8 0%, #EFBE8C 100%)",
+    "linear-gradient(135deg, #F8F1E6 0%, #E4D3BB 100%)",
+    "linear-gradient(135deg, #FDEEDC 0%, #F2C79B 100%)",
   ];
   const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return gradients[hash % gradients.length];
@@ -79,6 +79,7 @@ export default function MenuPage() {
   const [modalItem, setModalItem] = useState<Item | null>(null);
   const [showMap, setShowMap] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const sectionRefs = useRef<Record<number, HTMLElement | null>>({});
   const catBarRef = useRef<HTMLDivElement>(null);
 
@@ -88,22 +89,24 @@ export default function MenuPage() {
     if (saved) setCart(JSON.parse(saved));
   }, []);
 
-  const loadData = async () => {
+  async function loadData() {
     try {
       const [cr, ir] = await Promise.all([fetch("/api/categories"), fetch("/api/items")]);
       setCategories((await cr.json()).filter((c: Category) => c.name));
       setItems((await ir.json()).filter((i: Item) => i.name));
-    } catch {}
-  };
+    } catch {} finally {
+      setLoading(false);
+    }
+  }
 
-  const loadGuest = () => {
+  function loadGuest() {
     const guestId = localStorage.getItem("guestId");
     if (!guestId) return;
     guestFetch(`/api/guests/${guestId}`)
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(setGuest)
       .catch(() => setGuest(null));
-  };
+  }
 
   const saveCart = (c: typeof cart) => { setCart(c); localStorage.setItem("cart", JSON.stringify(c)); };
   const addToCart = (item: Item) => {
@@ -140,8 +143,8 @@ export default function MenuPage() {
     try {
       const modRes = await fetch(`/api/items/${item.id}/modifiers`);
       if (modRes.ok) {
-        const modifiers = await modRes.json();
-        setModalItem({ ...item, modifiers });
+        const { modifiers, groups } = await modRes.json();
+        setModalItem({ ...item, modifiers, modifierGroups: groups });
       } else setModalItem(item);
     } catch { setModalItem(item); }
     setModalOpen(true);
@@ -150,6 +153,8 @@ export default function MenuPage() {
   const cartTotal = cart.reduce((s, c) => s + c.price * c.qty, 0);
   const cartCount = cart.reduce((s, c) => s + c.qty, 0);
   const promoItems = items.filter(i => i.labels.includes("hit") || i.labels.includes("new")).slice(0, 10);
+  // Категории без доступных гостю позиций не показываем
+  const visibleCats = categories.filter(c => items.some(i => i.categoryId === c.id));
   const filteredItems = search ? items.filter(i => i.name.toLowerCase().includes(search.toLowerCase())) : null;
 
   return (
@@ -198,7 +203,7 @@ export default function MenuPage() {
         </div>
         {!search && (
           <div ref={catBarRef} className={styles.cats}>
-            {categories.map(cat => (
+            {visibleCats.map(cat => (
               <button key={cat.id} type="button" data-cat={cat.id} data-on={activeCat === cat.id} onClick={() => scrollToCat(cat.id)}>
                 {CAT_ICONS[cat.name] ?? "🍴"} {cat.name}
               </button>
@@ -209,27 +214,8 @@ export default function MenuPage() {
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 16px" }}>
         <div inert={tab !== "menu"}>
-        {/* Баннер */}
-        {!search && (
-          <div style={{
-            borderRadius: 4, margin: "16px 0", overflow: "hidden",
-            background: THEME.card, border: `1px solid ${THEME.border}`,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.05)",
-          }}>
-            <div style={{ height: 8, background: ACCENT }} />
-            <div style={{ padding: "28px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <div style={{ zIndex: 1, minWidth: 0 }}>
-              <div style={{ background: ACCENT, display: "inline-block", padding: "4px 12px", borderRadius: 4, fontSize: 11, letterSpacing: 2, fontWeight: 700, color: "#fff", marginBottom: 12 }}>
-                АКЦИЯ
-              </div>
-              <div style={{ color: THEME.text, fontSize: "clamp(22px, 5vw, 32px)", fontWeight: 800, lineHeight: 1.1, marginBottom: 8, letterSpacing: "-0.03em" }}>
-                Бесплатная доставка<br />от 1 000 ₽
-              </div>
-              <div style={{ color: ACCENT, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Заказывайте онлайн</div>
-            </div>
-            </div>
-          </div>
-        )}
+        {/* Акции */}
+        {!search && <PromoCarousel onTab={selectTab} onMap={() => setShowMap(true)} />}
 
         {/* Хиты и новинки */}
         {!search && promoItems.length > 0 && (
@@ -238,10 +224,9 @@ export default function MenuPage() {
               <div style={{ fontWeight: 800, fontSize: 20, color: THEME.text, letterSpacing: "-0.03em" }}>Хиты и новинки</div>
             </div>
             <div className={styles.productGrid}>
-              {promoItems.map(item => (
-                <div key={item.id} onClick={() => openModal(item)}
-                  style={{ minWidth: 0, borderRadius: 4, overflow: "hidden", background: THEME.card, boxShadow: "0 8px 24px rgba(0,0,0,0.06)", cursor: "pointer" }}>
-                  <div style={{ height: 100, background: THEME.bg, overflow: "hidden", position: "relative" }}>
+              {promoItems.map((item, index) => (
+                <div key={item.id} className={styles.card} onClick={() => openModal(item)} style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}>
+                  <div style={{ height: 100, background: THEME.well, overflow: "hidden", position: "relative" }}>
                     {item.photo ? (
                       <img src={item.photo} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     ) : (
@@ -265,7 +250,7 @@ export default function MenuPage() {
                   </div>
                   <div style={{ padding: "8px 10px 10px" }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: THEME.text, marginBottom: 4, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>{item.name}</div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: ACCENT }}>{item.deliveryPrice ?? item.price} ₽</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: THEME.text }}>{item.deliveryPrice ?? item.price} ₽</div>
                   </div>
                 </div>
               ))}
@@ -280,14 +265,30 @@ export default function MenuPage() {
             {filteredItems.length === 0
               ? <div style={{ textAlign: "center", color: THEME.muted, padding: "40px 0" }}>Ничего не найдено</div>
               : <div className={styles.productGrid}>
-                  {filteredItems.map(item => <ItemCard key={item.id} item={item} cart={cart} addToCart={addToCart} removeFromCart={removeFromCart} onOpenModal={() => openModal(item)} />)}
+                  {filteredItems.map((item, index) => <ItemCard key={item.id} item={item} index={index} cart={cart} addToCart={addToCart} removeFromCart={removeFromCart} onOpenModal={() => openModal(item)} />)}
                 </div>
             }
           </div>
         )}
 
+        {/* Скелетоны на время загрузки */}
+        {loading && !filteredItems && (
+          <div className={styles.productGrid} aria-hidden="true" style={{ marginTop: 24 }}>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className={styles.skeletonCard}>
+                <div className={styles.skeletonPhoto} />
+                <div className={styles.skeletonBody}>
+                  <div className={styles.skeletonLine} />
+                  <div className={styles.skeletonLine} />
+                  <div className={styles.skeletonLine} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Меню по категориям */}
-        {!filteredItems && categories.map(cat => {
+        {!filteredItems && visibleCats.map(cat => {
           const catItems = items.filter(i => i.categoryId === cat.id);
           if (!catItems.length) return null;
           return (
@@ -296,7 +297,7 @@ export default function MenuPage() {
                 {CAT_ICONS[cat.name] ?? "🍴"} {cat.name}
               </h2>
               <div className={styles.productGrid}>
-                {catItems.map(item => <ItemCard key={item.id} item={item} cart={cart} addToCart={addToCart} removeFromCart={removeFromCart} onOpenModal={() => openModal(item)} />)}
+                {catItems.map((item, index) => <ItemCard key={item.id} item={item} index={index} cart={cart} addToCart={addToCart} removeFromCart={removeFromCart} onOpenModal={() => openModal(item)} />)}
               </div>
             </section>
           );
@@ -312,15 +313,8 @@ export default function MenuPage() {
       {tab === "menu" && cartCount > 0 && (
         <div style={{ position: "fixed", bottom: 70, left: 0, right: 0, zIndex: 90, padding: "0 16px", display: "block" }}>
           <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-            <button onClick={() => selectTab("cart")}
-              style={{
-                width: "100%", maxWidth: 400, margin: "0 auto", display: "flex",
-                background: ACCENT, color: "#fff", border: "none", borderRadius: 16,
-                padding: "16px 20px", fontSize: 16, fontWeight: 700, cursor: "pointer",
-                alignItems: "center", justifyContent: "space-between",
-                boxShadow: "0 4px 24px rgba(245,130,32,0.35)",
-              }}>
-              <span style={{ background: "rgba(255,255,255,0.25)", borderRadius: 8, padding: "2px 10px", fontSize: 14, fontWeight: 800 }}>{cartCount}</span>
+            <button className={styles.cartBtn} onClick={() => selectTab("cart")}>
+              <span className={styles.cartCount}>{cartCount}</span>
               <span>Перейти в корзину</span>
               <span style={{ fontWeight: 800 }}>{cartTotal} ₽</span>
             </button>
@@ -337,10 +331,7 @@ export default function MenuPage() {
             { icon: "📋", label: "Заказы", key: "orders" },
             { icon: "👤", label: "Профиль", key: "profile" },
           ] as const).map(nav => (
-            <button key={nav.key} aria-pressed={tab === nav.key} onClick={() => selectTab(nav.key)} style={{
-              flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-              background: "transparent", border: "none", cursor: "pointer", gap: 2, padding: "8px 0", minHeight: 48,
-            }}>
+            <button key={nav.key} className={styles.navBtn} aria-pressed={tab === nav.key} onClick={() => selectTab(nav.key)}>
               <span aria-hidden="true" style={{ fontSize: 20 }}>{nav.icon}</span>
               <span style={{ fontSize: 10, fontWeight: tab === nav.key ? 700 : 500, color: tab === nav.key ? ACCENT : THEME.muted }}>{nav.label}</span>
             </button>
@@ -355,23 +346,24 @@ export default function MenuPage() {
   );
 }
 
-function ItemCard({ item, cart, addToCart, removeFromCart, onOpenModal }: {
-  item: Item; cart: {itemId:number;qty:number}[]; addToCart: (i: Item) => void; removeFromCart: (id: number) => void; onOpenModal: () => void;
+function ItemCard({ item, index = 0, cart, addToCart, removeFromCart, onOpenModal }: {
+  item: Item; index?: number; cart: {itemId:number;qty:number}[]; addToCart: (i: Item) => void; removeFromCart: (id: number) => void; onOpenModal: () => void;
 }) {
   const inCart = cart.find(c => c.itemId === item.id);
+  const price = item.deliveryPrice ?? item.price;
 
   return (
-    <div onClick={onOpenModal} style={{
-      background: THEME.card, borderRadius: 4, overflow: "hidden",
-      boxShadow: "0 8px 24px rgba(0,0,0,0.06)", cursor: "pointer",
-      display: "flex", flexDirection: "column",
-      transition: "transform 0.15s, box-shadow 0.15s",
-    }}
-      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 12px 28px rgba(0,0,0,0.1)"; }}
-      onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.06)"; }}
+    <div
+      className={styles.card}
+      role="button"
+      tabIndex={0}
+      aria-label={item.name}
+      onClick={onOpenModal}
+      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpenModal(); } }}
+      style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
     >
       {/* Фото */}
-      <div style={{ position: "relative", aspectRatio: "4/3", background: THEME.bg, overflow: "hidden" }}>
+      <div className={styles.cardPhoto}>
         {item.photo ? (
           <img src={item.photo} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
@@ -394,36 +386,37 @@ function ItemCard({ item, cart, addToCart, removeFromCart, onOpenModal }: {
         )}
         {/* Бейджи */}
         <div style={{ position: "absolute", top: 8, left: 8, display: "flex", gap: 4, flexWrap: "wrap" }}>
-          {item.labels.includes("hit") && <span style={{ background: ACCENT, color: "#fff", fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 4 }}>ХИТ</span>}
-          {item.labels.includes("new") && <span style={{ background: "#4CAF50", color: "#fff", fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 4 }}>NEW</span>}
-          {item.labels.includes("spicy") && <span style={{ background: "#FF5722", color: "#fff", fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 4 }}>🌶</span>}
+          {item.labels.includes("hit") && <span style={{ background: ACCENT, color: "#fff", fontSize: 11, fontWeight: 800, padding: "3px 8px", borderRadius: 6 }}>ХИТ</span>}
+          {item.labels.includes("new") && <span style={{ background: "#4CAF50", color: "#fff", fontSize: 11, fontWeight: 800, padding: "3px 8px", borderRadius: 6 }}>NEW</span>}
+          {item.labels.includes("spicy") && <span style={{ background: "#FF5722", color: "#fff", fontSize: 11, fontWeight: 800, padding: "3px 8px", borderRadius: 6 }}>🌶</span>}
         </div>
       </div>
 
       {/* Контент */}
-      <div style={{ padding: "10px 12px 12px", flex: 1, display: "flex", flexDirection: "column" }}>
-        <div style={{ fontWeight: 700, fontSize: 13, color: THEME.text, marginBottom: 4, lineHeight: 1.35, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>
+      <div style={{ padding: "14px 14px 16px", flex: 1, display: "flex", flexDirection: "column" }}>
+        <div style={{ fontWeight: 700, fontSize: 16, color: THEME.text, marginBottom: 6, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>
           {item.name}
         </div>
-        <div style={{ fontSize: 11, color: THEME.muted, marginBottom: 8, lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>
+        <div style={{ fontSize: 13, color: THEME.muted, marginBottom: 10, lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>
           {item.description}
         </div>
-        {item.calories && <div style={{ fontSize: 10, color: THEME.muted, marginBottom: 8 }}>{item.calories} ккал</div>}
+        {item.calories && <div style={{ fontSize: 12, color: THEME.muted, marginBottom: 10 }}>{item.calories} ккал</div>}
 
-        <div style={{ marginTop: "auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontWeight: 800, fontSize: 16, color: ACCENT }}>{item.deliveryPrice ?? item.price} ₽</span>
+        <div style={{ marginTop: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          {price > 0
+            ? <span style={{ fontWeight: 800, fontSize: 19, color: THEME.text }}>{price} ₽</span>
+            : <span style={{ fontWeight: 700, fontSize: 13, color: THEME.muted }}>Цена уточняется</span>}
 
-          {inCart ? (
-            <div onClick={e => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 6, background: THEME.orangeSoft, borderRadius: 10, padding: "3px 6px" }}>
-              <button onClick={e => { e.stopPropagation(); removeFromCart(item.id); }}
-                style={{ width: 26, height: 26, borderRadius: 7, border: "none", background: THEME.card, color: ACCENT, fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>−</button>
-              <span style={{ fontWeight: 800, fontSize: 14, minWidth: 18, textAlign: "center", color: THEME.text }}>{inCart.qty}</span>
-              <button onClick={e => { e.stopPropagation(); addToCart(item); }}
-                style={{ width: 26, height: 26, borderRadius: 7, border: "none", background: ACCENT, color: "#fff", fontSize: 16, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+          {price === 0 ? null : inCart ? (
+            <div className={styles.qtyBox} onClick={e => e.stopPropagation()}>
+              <button className={styles.qtyBtn} aria-label={`Убрать ${item.name}`} onClick={e => { e.stopPropagation(); removeFromCart(item.id); }}
+                style={{ background: THEME.card, color: ACCENT, boxShadow: "0 1px 4px rgba(92,70,46,0.12)" }}>−</button>
+              <span style={{ fontWeight: 800, fontSize: 16, minWidth: 22, textAlign: "center", color: THEME.text }}>{inCart.qty}</span>
+              <button className={styles.qtyBtn} aria-label={`Добавить ${item.name}`} onClick={e => { e.stopPropagation(); addToCart(item); }}
+                style={{ background: ACCENT, color: "#fff" }}>+</button>
             </div>
           ) : (
-            <button onClick={e => { e.stopPropagation(); addToCart(item); }}
-              style={{ width: 32, height: 32, borderRadius: 10, border: "none", background: ACCENT, color: "#fff", fontSize: 18, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(245,130,32,0.3)" }}>
+            <button className={styles.addBtn} aria-label={`Добавить ${item.name} в корзину`} onClick={e => { e.stopPropagation(); addToCart(item); }}>
               +
             </button>
           )}

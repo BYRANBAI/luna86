@@ -10,13 +10,20 @@ export async function GET(
     const { id } = await params;
     const itemId = parseInt(id);
 
-    // Получить модификаторы
-    const modifiers = await db.modifier.findMany({
-      where: { itemId },
-      orderBy: { id: "asc" },
-    });
+    // Свободные добавки и группы с обязательным выбором (размер порции и т.п.)
+    const [modifiers, groups] = await Promise.all([
+      db.modifier.findMany({
+        where: { itemId },
+        orderBy: { id: "asc" },
+      }),
+      db.modifierGroup.findMany({
+        where: { itemId },
+        orderBy: { id: "asc" },
+        include: { options: { orderBy: { id: "asc" } } },
+      }),
+    ]);
 
-    return NextResponse.json(modifiers);
+    return NextResponse.json({ modifiers, groups });
   } catch (error) {
     console.error("Get modifiers error:", error);
     return NextResponse.json(

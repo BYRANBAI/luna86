@@ -1,10 +1,11 @@
 export const THEME = {
   orange: "#F58220",
   orangeHover: "#E26F0F",
-  orangeSoft: "#FFF3E6",
-  text: "#3A3A3A",
-  muted: "#8A8A8A",
-  bg: "#F5F5F5",
-  card: "#FFFFFF",
-  border: "#EDEDED",
+  orangeSoft: "#FDE6D0",
+  text: "#1C2430",
+  muted: "#8A8178",
+  bg: "#F6F0E8",
+  card: "#FBF7F1",
+  border: "#E8DFD2",
+  well: "#EDE4D4",
 } as const;

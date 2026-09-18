@@ -107,7 +107,7 @@ export async function clearAuthCookies() {
 
 export async function currentUser(): Promise<User | null> {
   const jar = await cookies();
-  let accessToken = jar.get("luna_access_token")?.value;
+  const accessToken = jar.get("luna_access_token")?.value;
 
   // Проверяем старую сессионную куку для обратной совместимости
   if (!accessToken) {

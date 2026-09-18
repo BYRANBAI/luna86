@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatRuPhone, normalizePhone } from "@/lib/phone";
 import { CAFE_INFO } from "@/lib/cafe";
+import { THEME } from "@/lib/theme";
 import { clearGuestSession, guestFetch, saveGuestSession } from "@/lib/guest-session";
 import styles from "./GuestTabs.module.css";
 
@@ -13,10 +14,11 @@ interface Guest { name: string; phone: string; email?: string; bonuses: number; 
 interface Order { id: number; number: string; status: string; total: number; createdAt: string; }
 interface Address { id: number; street: string; building: string; apartment?: string; }
 interface Bonus { id: number; reason: string; amount: number; }
-const card = { padding: 20, borderRadius: 4, background: "#FFFFFF", marginBottom: 12, border: "1px solid #EDEDED", boxShadow: "0 8px 24px rgba(0,0,0,0.05)" };
-const action = { padding: "12px 18px", borderRadius: 12, border: "none", background: "#F58220", color: "white", cursor: "pointer", display: "inline-block", textDecoration: "none" };
+const card = { padding: 20, borderRadius: 20, background: THEME.card, marginBottom: 12, border: `1px solid ${THEME.border}`, boxShadow: "none" };
+const action = { padding: "12px 18px", borderRadius: 12, border: "none", background: THEME.orange, color: "white", cursor: "pointer", display: "inline-block", textDecoration: "none", boxShadow: "0 4px 14px rgba(245,130,32,0.28)", transition: "background 200ms ease, transform 180ms ease" };
+const secondary = { ...action, background: THEME.orangeSoft, color: THEME.text, border: `1px solid ${THEME.border}`, boxShadow: "none" };
 const statuses: Record<string, string> = { NEW: "Принят", CONFIRMED: "Подтверждён", COOKING: "Готовится", READY: "Готов", DELIVERY_ASSIGNED: "Курьер назначен", IN_DELIVERY: "В пути", DELIVERING: "В пути", DELIVERED: "Доставлен", DONE: "Завершён", CANCELLED: "Отменён" };
-const inp = { width: "100%", border: "1px solid #EDEDED", borderRadius: 4, padding: "12px 14px", fontSize: 15, outline: "none", background: "#FFFFFF", color: "#3A3A3A", boxSizing: "border-box" as const, marginBottom: 10 };
+const inp = { width: "100%", border: `1px solid ${THEME.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 15, outline: "none", background: THEME.card, color: THEME.text, boxSizing: "border-box" as const, marginBottom: 10 };
 
 function PhoneField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
@@ -71,7 +73,7 @@ function SetPasswordForm({ title, onDone }: { title: string; onDone: () => void 
 
   return (
     <form onSubmit={submit}>
-      <p style={{ fontSize: 13, color: "#8A8A8A", marginBottom: 12 }}>{title}</p>
+      <p style={{ fontSize: 13, color: THEME.muted, marginBottom: 12 }}>{title}</p>
       <input style={inp} type="password" placeholder="Пароль" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
       <input style={inp} type="password" placeholder="Повторите пароль" value={confirm} onChange={e => setConfirm(e.target.value)} required minLength={6} />
       {error && <p style={{ color: "#F58220", fontSize: 13, marginBottom: 12 }}>{error}</p>}
@@ -184,11 +186,11 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
   return (
     <div style={card}>
       {mode !== "reset" && step !== "password" && (
-        <div style={{ display: "flex", borderRadius: 12, overflow: "hidden", border: "1px solid #333", marginBottom: 16 }}>
+        <div style={{ display: "flex", borderRadius: 12, overflow: "hidden", border: `1px solid ${THEME.border}`, marginBottom: 16 }}>
           {(["login", "register"] as const).map(t => (
             <button key={t} type="button" onClick={() => resetMode(t)}
               style={{ flex: 1, padding: "10px 0", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer",
-                background: mode === t ? "#F58220" : "#FFF3E6", color: mode === t ? "#fff" : "#3A3A3A" }}>
+                background: mode === t ? THEME.orange : THEME.orangeSoft, color: mode === t ? "#fff" : THEME.text }}>
               {t === "login" ? "Войти" : "Регистрация"}
             </button>
           ))}
@@ -223,11 +225,11 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
             {loading ? "Проверяем…" : "Подтвердить номер"}
           </button>
           {verifyMethod === "flash_call" && (
-            <button type="button" onClick={() => void sendCode("sms")} style={{ ...action, width: "100%", marginTop: 8, background: "#333" }}>
+            <button type="button" onClick={() => void sendCode("sms")} style={{ ...secondary, width: "100%", marginTop: 8 }}>
               Не дозвонились? Получить SMS
             </button>
           )}
-          <button type="button" onClick={() => { setStep("form"); setError(""); }} style={{ ...action, width: "100%", marginTop: 8, background: "#333" }}>Изменить номер</button>
+          <button type="button" onClick={() => { setStep("form"); setError(""); }} style={{ ...secondary, width: "100%", marginTop: 8 }}>Изменить номер</button>
         </form>
       )}
 
@@ -242,7 +244,7 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
           <button type="button" onClick={() => { setMode("reset"); setLoginBy("call"); setStep("form"); setError(""); }} style={{ background: "none", border: "none", color: "#F58220", fontSize: 13, fontWeight: 700, marginTop: 10, cursor: "pointer", padding: 0 }}>
             Забыли пароль?
           </button>
-          <button type="button" onClick={() => { setLoginBy("call"); setStep("form"); setError(""); }} style={{ ...action, width: "100%", marginTop: 8, background: "#333" }}>
+          <button type="button" onClick={() => { setLoginBy("call"); setStep("form"); setError(""); }} style={{ ...secondary, width: "100%", marginTop: 8 }}>
             Войти звонком
           </button>
           <SupportNote />
@@ -256,7 +258,7 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
           <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
             {loading ? "Звоним…" : "Позвонить мне"}
           </button>
-          <button type="button" onClick={() => { setLoginBy("password"); setError(""); }} style={{ ...action, width: "100%", marginTop: 8, background: "#333" }}>
+          <button type="button" onClick={() => { setLoginBy("password"); setError(""); }} style={{ ...secondary, width: "100%", marginTop: 8 }}>
             Войти с паролем
           </button>
           <SupportNote />
@@ -272,7 +274,7 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
             {loading ? "Проверяем…" : "Войти"}
           </button>
           {verifyMethod === "flash_call" && (
-            <button type="button" onClick={() => void sendCode("sms")} style={{ ...action, width: "100%", marginTop: 8, background: "#333" }}>
+            <button type="button" onClick={() => void sendCode("sms")} style={{ ...secondary, width: "100%", marginTop: 8 }}>
               Не дозвонились? Получить SMS
             </button>
           )}
@@ -287,7 +289,7 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
           <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
             {loading ? "Звоним…" : "Позвонить мне"}
           </button>
-          <button type="button" onClick={() => resetMode("login")} style={{ ...action, width: "100%", marginTop: 8, background: "#333" }}>
+          <button type="button" onClick={() => resetMode("login")} style={{ ...secondary, width: "100%", marginTop: 8 }}>
             Назад ко входу
           </button>
           <SupportNote />
@@ -303,7 +305,7 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
             {loading ? "Проверяем…" : "Подтвердить"}
           </button>
           {verifyMethod === "flash_call" && (
-            <button type="button" onClick={() => void sendCode("sms")} style={{ ...action, width: "100%", marginTop: 8, background: "#333" }}>
+            <button type="button" onClick={() => void sendCode("sms")} style={{ ...secondary, width: "100%", marginTop: 8 }}>
               Не дозвонились? Получить SMS
             </button>
           )}
@@ -315,16 +317,16 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
 
 export function CartPanel({ cart, onChange, onMenu }: { cart: CartLine[]; onChange: (cart: CartLine[]) => void; onMenu: () => void }) {
   const quantity = (id: number, delta: number) => onChange(cart.map(line => line.itemId === id ? { ...line, qty: line.qty + delta } : line).filter(line => line.qty > 0));
-  return <section className={styles.panel} style={{ color: "#fff", padding: "24px 0" }} aria-label="Корзина">
+  return <section className={styles.panel} style={{ color: THEME.text, padding: "24px 0" }} aria-label="Корзина">
     <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>Корзина</h1>
     {!cart.length ? <div style={card}><p style={{ marginBottom: 16 }}>Здесь пока пусто. Добавьте любимые блюда.</p><button style={action} onClick={onMenu}>Выбрать блюда</button></div> : <>
       {cart.map(line => <div key={line.itemId} style={{ ...card, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16 }}>
-        <div style={{ flex: "1 1 160px" }}><strong>{line.name}</strong><p style={{ color: "#8A8A8A", marginTop: 6 }}>{line.price * line.qty} ₽</p></div>
+        <div style={{ flex: "1 1 160px" }}><strong>{line.name}</strong><p style={{ color: THEME.muted, marginTop: 6 }}>{line.price * line.qty} ₽</p></div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button style={{ ...action, minWidth: 44 }} aria-label={`Уменьшить ${line.name}`} onClick={() => quantity(line.itemId, -1)}>−</button>
           <span aria-live="polite">{line.qty}</span>
           <button style={{ ...action, minWidth: 44 }} aria-label={`Добавить ${line.name}`} onClick={() => quantity(line.itemId, 1)}>+</button>
-          <button style={{ ...action, background: "transparent", color: "#ccc" }} aria-label={`Удалить ${line.name}`} onClick={() => onChange(cart.filter(x => x.itemId !== line.itemId))}>Удалить</button>
+          <button style={{ ...secondary, background: "transparent", color: THEME.muted }} aria-label={`Удалить ${line.name}`} onClick={() => onChange(cart.filter(x => x.itemId !== line.itemId))}>Удалить</button>
         </div>
       </div>)}
       <div style={card}><p style={{ fontWeight: 800, fontSize: 20, marginBottom: 20 }}>Итого: {cart.reduce((sum, line) => sum + line.qty * line.price, 0)} ₽</p><Link style={action} href="/checkout">Оформить заказ</Link></div>
@@ -356,25 +358,25 @@ export function AccountPanel({ tab, onLogout, onLogin }: { tab: "orders" | "prof
     void load();
     return () => controller.abort();
   }, [tab, attempt]);
-  return <section className={styles.panel} style={{ color: "white", padding: "24px 0" }} aria-label={tab === "orders" ? "Заказы" : "Профиль"}>
+  return <section className={styles.panel} style={{ color: THEME.text, padding: "24px 0" }} aria-label={tab === "orders" ? "Заказы" : "Профиль"}>
     <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>{tab === "orders" ? "Мои заказы" : "Профиль"}</h1>
     {needsLogin ? <GuestAuthForm onSuccess={() => { setNeedsLogin(false); setAttempt(x => x + 1); onLogin?.(); }} /> : error ? <div style={card} role="alert"><p style={{ marginBottom: 16 }}>{error}</p><button style={action} onClick={() => setAttempt(x => x + 1)}>Повторить</button></div> : !data ? <p role="status">Загрузка…</p> : tab === "orders" ? <>
       {!data.orders.length && <p style={card}>У вас пока нет заказов.</p>}
-      {data.orders.map(order => <Link key={order.id} href={`/orders/${order.id}`} style={{ ...card, display: "flex", gap: 16, justifyContent: "space-between", color: "inherit", textDecoration: "none" }}><div><strong>№{order.number}</strong><p>{statuses[order.status] ?? order.status}</p><small style={{ color: "#8A8A8A" }}>{new Date(order.createdAt).toLocaleString("ru-RU")}</small></div><strong style={{ whiteSpace: "nowrap" }}>{order.total} ₽</strong></Link>)}
+      {data.orders.map(order => <Link key={order.id} href={`/orders/${order.id}`} style={{ ...card, display: "flex", gap: 16, justifyContent: "space-between", color: "inherit", textDecoration: "none" }}><div><strong>№{order.number}</strong><p>{statuses[order.status] ?? order.status}</p><small style={{ color: THEME.muted }}>{new Date(order.createdAt).toLocaleString("ru-RU")}</small></div><strong style={{ whiteSpace: "nowrap" }}>{order.total} ₽</strong></Link>)}
     </> : <>
       {data.guest.hasPassword === false && (
         <div style={card}>
           <SetPasswordForm title="Задайте пароль для этого аккаунта, чтобы входить без звонка" onDone={() => setAttempt(x => x + 1)} />
         </div>
       )}
-      <div style={card}><h2 style={{ fontWeight: 700 }}>{data.guest.name}</h2><p>{data.guest.phone}</p>{data.guest.email && <p>{data.guest.email}</p>}<p style={{ color: "#efd699", marginTop: 12 }}>{data.guest.bonuses} бонусов</p></div>
+      <div style={card}><h2 style={{ fontWeight: 700 }}>{data.guest.name}</h2><p>{data.guest.phone}</p>{data.guest.email && <p>{data.guest.email}</p>}<p style={{ color: THEME.orange, fontWeight: 700, marginTop: 12 }}>{data.guest.bonuses} бонусов</p></div>
       <h2 style={{ margin: "24px 0 12px", fontWeight: 700 }}>Адреса</h2>
       {!data.addresses.length && <p style={card}>Адрес можно добавить при оформлении заказа.</p>}
       {data.addresses.map(address => <p key={address.id} style={card}>{address.street}, {address.building}{address.apartment ? `, кв. ${address.apartment}` : ""}</p>)}
       <h2 style={{ margin: "24px 0 12px", fontWeight: 700 }}>История бонусов</h2>
       {!data.bonuses.length && <p style={card}>История бонусов пуста.</p>}
       {data.bonuses.map(bonus => <p key={bonus.id} style={card}>{bonus.reason}: {bonus.amount > 0 ? "+" : ""}{bonus.amount}</p>)}
-      <button style={{ ...action, background: "#333", marginTop: 12 }} onClick={() => { clearGuestSession(); setNeedsLogin(true); setData(null); onLogout(); }}>Выйти</button>
+      <button style={{ ...secondary, background: "transparent", color: THEME.muted, marginTop: 12 }} onClick={() => { clearGuestSession(); setNeedsLogin(true); setData(null); onLogout(); }}>Выйти</button>
     </>}
   </section>;
 }

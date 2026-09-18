@@ -1,14 +1,14 @@
 .shell {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f5f5f5;
-  --bg-tertiary: #eeeeee;
-  --text-primary: #3a3a3a;
-  --text-secondary: #6b6b6b;
-  --text-tertiary: #9a9a9a;
+  --bg-primary: #fbf7f1;
+  --bg-secondary: #f6f0e8;
+  --bg-tertiary: #ede4d4;
+  --text-primary: #1c2430;
+  --text-secondary: #6b5344;
+  --text-tertiary: #8a8178;
   --accent-primary: #f58220;
   --accent-hover: #e26f0f;
-  --accent-light: #fff3e6;
-  --border: #ededed;
+  --accent-light: #fde6d0;
+  --border: #e8dfd2;
   --success: #2d5a3d;
   color-scheme: light;
 

@@ -63,17 +63,7 @@ export default function CheckoutPage() {
   const [showNewAddress, setShowNewAddress] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (loadCart()) loadGuest();
-  }, []);
-
-  useEffect(() => {
-    if (cart.length > 0) {
-      loadItems();
-    }
-  }, [cart]);
-
-  const loadCart = () => {
+  function loadCart() {
     try {
       const parsed: unknown = JSON.parse(localStorage.getItem("cart") ?? "[]");
       const safe = Array.isArray(parsed) ? parsed.filter((item): item is CartItem =>
@@ -88,9 +78,9 @@ export default function CheckoutPage() {
       setCart([]);
       return false;
     }
-  };
+  }
 
-  const loadGuest = async () => {
+  async function loadGuest() {
     const guestId = localStorage.getItem("guestId");
     if (!guestId) {
       router.push("/menu?tab=profile");
@@ -110,9 +100,9 @@ export default function CheckoutPage() {
       console.error("Ошибка загрузки данных гостя:", error);
       router.push("/menu?tab=profile");
     }
-  };
+  }
 
-  const loadAddresses = async (guestId: number) => {
+  async function loadAddresses(guestId: number) {
     try {
       const res = await guestFetch(`/api/guests/${guestId}/addresses`);
       if (res.ok) {
@@ -124,9 +114,9 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error("Ошибка загрузки адресов:", error);
     }
-  };
+  }
 
-  const loadItems = async () => {
+  async function loadItems() {
     try {
       const res = await fetch("/api/items");
       const data = await res.json();
@@ -134,7 +124,17 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error("Ошибка загрузки товаров:", error);
     }
-  };
+  }
+
+  useEffect(() => {
+    if (loadCart()) loadGuest();
+  }, []);
+
+  useEffect(() => {
+    if (cart.length > 0) {
+      loadItems();
+    }
+  }, [cart]);
 
   const saveNewAddress = async () => {
     if (!newAddress.street || !newAddress.building) {
@@ -231,12 +231,12 @@ export default function CheckoutPage() {
   const promoAmount = Math.floor(cartTotal * promoDiscount / 100);
   const finalTotal = cartTotal - bonusesToUse - promoAmount;
 
-  const card: React.CSSProperties = { background: "#fff", borderRadius: 16, padding: 24, marginBottom: 16, boxShadow: "0 1px 4px rgba(139, 157, 195, 0.12)" };
-  const inp2 = "w-full rounded-xl border border-[#e3e8ef] bg-[#f8f9fb] px-4 py-2 text-[#2c3e50] outline-none focus:border-[#F58220] focus:bg-white";
-  const sectionTitle: React.CSSProperties = { fontWeight: 800, fontSize: 18, color: "#2c3e50", marginBottom: 16 };
+  const card: React.CSSProperties = { background: "#FBF7F1", border: "1px solid #F1E9DC", borderRadius: 20, padding: 24, marginBottom: 16, boxShadow: "0 1px 2px rgba(92,70,46,0.04), 0 6px 16px rgba(92,70,46,0.06)" };
+  const inp2 = "w-full rounded-xl border border-[#E8DFD2] bg-[#F3ECE1] px-4 py-2 text-[#1C2430] outline-none focus:border-[#F58220] focus:bg-white";
+  const sectionTitle: React.CSSProperties = { fontWeight: 800, fontSize: 18, color: "#1C2430", marginBottom: 16 };
 
   if (cart.length === 0) return (
-    <main style={{ minHeight: "100vh", background: "#f5f7fa", padding: "48px 24px", color: "#2c3e50", textAlign: "center" }}>
+    <main style={{ minHeight: "100vh", background: "#F6F0E8", padding: "48px 24px", color: "#1C2430", textAlign: "center" }}>
       <h1 style={{ fontSize: 28, fontWeight: 800 }}>Корзина пока пуста</h1>
       <p style={{ margin: "16px 0 24px" }}>Добавьте блюда из меню, чтобы оформить заказ.</p>
       <Link href="/menu" style={{ display: "inline-block", padding: "14px 24px", background: "#F58220", color: "white", borderRadius: 12 }}>Выбрать блюда</Link>
@@ -244,20 +244,20 @@ export default function CheckoutPage() {
   );
 
   return (
-    <main style={{ minHeight: "100vh", background: "#f5f7fa" }}>
-      <header style={{ background: "#fff", borderBottom: "1px solid #EDEDED", position: "sticky", top: 0, zIndex: 100 }}>
+    <main style={{ minHeight: "100vh", background: "#F6F0E8" }}>
+      <header style={{ background: "#FBF7F1", borderBottom: "1px solid #E8DFD2", position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ height: 8, background: "#F58220" }} />
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 16px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
             <span style={{ fontSize: 24 }}>🌙</span>
             <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: "#3A3A3A", letterSpacing: 2 }}>LUNA</span>
           </Link>
-          <Link href="/menu" style={{ fontSize: 14, color: "#a0aec0", textDecoration: "none", fontWeight: 600 }}>← Вернуться в меню</Link>
+          <Link href="/menu" style={{ fontSize: 14, color: "#8A8178", textDecoration: "none", fontWeight: 600 }}>← Вернуться в меню</Link>
         </div>
       </header>
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 16px" }}>
-        <h1 style={{ fontWeight: 800, fontSize: 28, color: "#2c3e50", marginBottom: 24 }}>Оформление заказа</h1>
+        <h1 style={{ fontWeight: 800, fontSize: 28, color: "#1C2430", marginBottom: 24 }}>Оформление заказа</h1>
 
         <div className="grid grid-cols-1 gap-6 items-start lg:grid-cols-[minmax(0,1fr)_360px]">
           <div>
@@ -266,24 +266,24 @@ export default function CheckoutPage() {
               <div style={sectionTitle}>Адрес доставки</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {addresses.map((addr) => (
-                  <label key={addr.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: 16, borderRadius: 12, border: `2px solid ${selectedAddress === addr.id ? "#F58220" : "#e3e8ef"}`, background: selectedAddress === addr.id ? "#f0f3f7" : "#fff", cursor: "pointer" }}>
+                  <label key={addr.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: 16, borderRadius: 12, border: `2px solid ${selectedAddress === addr.id ? "#F58220" : "#E8DFD2"}`, background: selectedAddress === addr.id ? "#FDE6D0" : "#fff", cursor: "pointer" }}>
                     <input type="radio" name="address" checked={selectedAddress === addr.id} onChange={() => setSelectedAddress(addr.id)} style={{ marginTop: 2 }} />
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                        <span style={{ fontWeight: 700, fontSize: 14, color: "#2c3e50" }}>{addr.label}</span>
+                        <span style={{ fontWeight: 700, fontSize: 14, color: "#1C2430" }}>{addr.label}</span>
                         {addr.isDefault && <span style={{ background: "#F58220", color: "#fff", fontSize: 11, padding: "2px 8px", borderRadius: 6, fontWeight: 700 }}>По умолчанию</span>}
                       </div>
-                      <p style={{ fontSize: 13, color: "#a0aec0" }}>{addr.street}, {addr.building}{addr.apartment && `, кв. ${addr.apartment}`}</p>
+                      <p style={{ fontSize: 13, color: "#8A8178" }}>{addr.street}, {addr.building}{addr.apartment && `, кв. ${addr.apartment}`}</p>
                     </div>
                   </label>
                 ))}
 
                 {!showNewAddress ? (
-                  <button onClick={() => setShowNewAddress(true)} style={{ padding: 16, borderRadius: 12, border: "2px dashed #e3e8ef", background: "#fff", color: "#a0aec0", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+                  <button onClick={() => setShowNewAddress(true)} style={{ padding: 16, borderRadius: 12, border: "2px dashed #E8DFD2", background: "#fff", color: "#8A8178", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
                     + Добавить новый адрес
                   </button>
                 ) : (
-                  <div style={{ padding: 16, borderRadius: 12, border: "2px solid #F58220", background: "#f0f3f7", display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ padding: 16, borderRadius: 12, border: "2px solid #F58220", background: "#FDE6D0", display: "flex", flexDirection: "column", gap: 10 }}>
                     <input type="text" placeholder="Улица" value={newAddress.street} onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })} className={inp2} />
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                       <input type="text" placeholder="Дом" value={newAddress.building} onChange={(e) => setNewAddress({ ...newAddress, building: e.target.value })} className={inp2} />
@@ -291,7 +291,7 @@ export default function CheckoutPage() {
                     </div>
                     <div style={{ display: "flex", gap: 10 }}>
                       <button onClick={saveNewAddress} style={{ flex: 1, background: "#F58220", color: "#fff", border: "none", borderRadius: 10, padding: "10px 0", fontWeight: 700, cursor: "pointer" }}>Сохранить</button>
-                      <button onClick={() => setShowNewAddress(false)} style={{ padding: "10px 20px", border: "1.5px solid #e3e8ef", borderRadius: 10, background: "#fff", color: "#a0aec0", fontWeight: 600, cursor: "pointer" }}>Отмена</button>
+                      <button onClick={() => setShowNewAddress(false)} style={{ padding: "10px 20px", border: "1.5px solid #E8DFD2", borderRadius: 10, background: "#fff", color: "#8A8178", fontWeight: 600, cursor: "pointer" }}>Отмена</button>
                     </div>
                   </div>
                 )}
@@ -302,7 +302,7 @@ export default function CheckoutPage() {
             {guest && guest.bonuses > 0 && (
               <div style={card}>
                 <div style={sectionTitle}>Бонусы</div>
-                <p style={{ fontSize: 14, color: "#a0aec0", marginBottom: 12 }}>
+                <p style={{ fontSize: 14, color: "#8A8178", marginBottom: 12 }}>
                   Доступно: <span style={{ color: "#F58220", fontWeight: 700 }}>{guest.bonuses}</span> бонусов (можно списать до {maxBonusUse} ₽)
                 </p>
                 <input type="number" min="0" max={maxBonusUse} value={bonusesToUse}
@@ -316,9 +316,9 @@ export default function CheckoutPage() {
               <div style={sectionTitle}>Способ оплаты</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {[{ val: "card_delivery", label: "💳 Картой курьеру" }, { val: "cash", label: "💵 Наличными курьеру" }].map(opt => (
-                  <label key={opt.val} style={{ display: "flex", alignItems: "center", gap: 12, padding: 16, borderRadius: 12, border: `2px solid ${paymentMethod === opt.val ? "#F58220" : "#e3e8ef"}`, background: paymentMethod === opt.val ? "#f0f3f7" : "#fff", cursor: "pointer" }}>
+                  <label key={opt.val} style={{ display: "flex", alignItems: "center", gap: 12, padding: 16, borderRadius: 12, border: `2px solid ${paymentMethod === opt.val ? "#F58220" : "#E8DFD2"}`, background: paymentMethod === opt.val ? "#FDE6D0" : "#fff", cursor: "pointer" }}>
                     <input type="radio" name="payment" value={opt.val} checked={paymentMethod === opt.val} onChange={(e) => setPaymentMethod(e.target.value)} />
-                    <span style={{ fontWeight: 600, fontSize: 15, color: "#2c3e50" }}>{opt.label}</span>
+                    <span style={{ fontWeight: 600, fontSize: 15, color: "#1C2430" }}>{opt.label}</span>
                   </label>
                 ))}
               </div>
@@ -350,7 +350,7 @@ export default function CheckoutPage() {
 
           {/* Итог */}
           <div style={{ position: "sticky", top: 80 }}>
-            <div style={{ background: "#fff", borderRadius: 16, padding: 24, boxShadow: "0 2px 12px rgba(0,0,0,0.09)" }}>
+            <div style={{ background: "#FBF7F1", border: "1px solid #F1E9DC", borderRadius: 20, padding: 24, boxShadow: "0 2px 4px rgba(92,70,46,0.06), 0 16px 32px rgba(92,70,46,0.1)" }}>
               <div style={sectionTitle}>Ваш заказ</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
                 {cart.map((cartItem) => {
@@ -362,37 +362,37 @@ export default function CheckoutPage() {
                         {item.photo && <img src={item.photo} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: 14, fontWeight: 600, color: "#2c3e50", marginBottom: 2 }}>{item.name}</p>
-                        <p style={{ fontSize: 12, color: "#a0aec0" }}>{cartItem.qty} × {cartItem.price} ₽</p>
+                        <p style={{ fontSize: 14, fontWeight: 600, color: "#1C2430", marginBottom: 2 }}>{item.name}</p>
+                        <p style={{ fontSize: 12, color: "#8A8178" }}>{cartItem.qty} × {cartItem.price} ₽</p>
                         <div className="flex items-center gap-3">
                           <button disabled={loading} aria-label={`Уменьшить ${item.name}`} className="min-h-11 min-w-11 rounded-lg border" onClick={() => updateCartQty(item.id, -1)}>−</button>
                           <span>{cartItem.qty}</span>
                           <button disabled={loading} aria-label={`Добавить ${item.name}`} className="min-h-11 min-w-11 rounded-lg border" onClick={() => updateCartQty(item.id, 1)}>+</button>
                         </div>
                       </div>
-                      <span style={{ fontWeight: 700, fontSize: 14, color: "#2c3e50" }}>{cartItem.qty * cartItem.price} ₽</span>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: "#1C2430" }}>{cartItem.qty * cartItem.price} ₽</span>
                     </div>
                   );
                 })}
               </div>
 
-              <div style={{ borderTop: "1px solid #F0F0F0", paddingTop: 16, display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#a0aec0" }}>
-                  <span>Сумма</span><span style={{ fontWeight: 600, color: "#2c3e50" }}>{cartTotal} ₽</span>
+              <div style={{ borderTop: "1px solid #E8DFD2", paddingTop: 16, display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#8A8178" }}>
+                  <span>Сумма</span><span style={{ fontWeight: 600, color: "#1C2430" }}>{cartTotal} ₽</span>
                 </div>
                 {bonusesToUse > 0 && (
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
-                    <span style={{ color: "#a0aec0" }}>Списано бонусов</span><span style={{ fontWeight: 700, color: "#F58220" }}>−{bonusesToUse} ₽</span>
+                    <span style={{ color: "#8A8178" }}>Списано бонусов</span><span style={{ fontWeight: 700, color: "#F58220" }}>−{bonusesToUse} ₽</span>
                   </div>
                 )}
                 {promoDiscount > 0 && (
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
-                    <span style={{ color: "#a0aec0" }}>Промокод ({promoCode})</span><span style={{ fontWeight: 700, color: "#22C55E" }}>−{promoAmount} ₽</span>
+                    <span style={{ color: "#8A8178" }}>Промокод ({promoCode})</span><span style={{ fontWeight: 700, color: "#22C55E" }}>−{promoAmount} ₽</span>
                   </div>
                 )}
-                <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 8, borderTop: "1px solid #F0F0F0" }}>
-                  <span style={{ fontWeight: 800, fontSize: 18, color: "#2c3e50" }}>Итого</span>
-                  <span style={{ fontWeight: 800, fontSize: 18, color: "#2c3e50" }}>{finalTotal} ₽</span>
+                <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 8, borderTop: "1px solid #E8DFD2" }}>
+                  <span style={{ fontWeight: 800, fontSize: 18, color: "#1C2430" }}>Итого</span>
+                  <span style={{ fontWeight: 800, fontSize: 18, color: "#1C2430" }}>{finalTotal} ₽</span>
                 </div>
               </div>
 

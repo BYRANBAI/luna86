@@ -47,11 +47,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<"orders" | "bonuses" | "addresses">("orders");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
-
-  const loadProfile = async () => {
+  async function loadProfile() {
     const token = localStorage.getItem("guestToken");
     const guestId = localStorage.getItem("guestId");
 
@@ -85,7 +81,11 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
 
   const logout = () => {
     localStorage.removeItem("guestToken");
@@ -94,14 +94,14 @@ export default function ProfilePage() {
     router.push("/auth");
   };
 
-  const cardS: React.CSSProperties = { background: "#fff", borderRadius: 16, padding: 24, marginBottom: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.07)" };
+  const cardS: React.CSSProperties = { background: "#FBF7F1", border: "1px solid #F1E9DC", borderRadius: 20, padding: 24, marginBottom: 12, boxShadow: "0 1px 2px rgba(92,70,46,0.04), 0 6px 16px rgba(92,70,46,0.06)" };
 
   if (loading) {
     return (
-      <main style={{ minHeight: "100vh", background: "#f5f7fa", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <main style={{ minHeight: "100vh", background: "#F6F0E8", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ width: 56, height: 56, borderRadius: "50%", border: "4px solid #F0F0F0", borderTopColor: "#F58220", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
-          <p style={{ fontSize: 16, color: "#a0aec0" }}>Загрузка профиля...</p>
+          <div style={{ width: 56, height: 56, borderRadius: "50%", border: "4px solid #E8DFD2", borderTopColor: "#F58220", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+          <p style={{ fontSize: 16, color: "#8A8178" }}>Загрузка профиля...</p>
         </div>
       </main>
     );
@@ -116,7 +116,7 @@ export default function ProfilePage() {
 
   const statusColors: Record<string, string> = {
     NEW: "#F58220", CONFIRMED: "#F58220", COOKING: "#FF6B00",
-    READY: "#22C55E", DELIVERING: "#3B82F6", DELIVERED: "#2c3e50", CANCELLED: "#999",
+    READY: "#22C55E", DELIVERING: "#3B82F6", DELIVERED: "#1C2430", CANCELLED: "#999",
   };
 
   const tabs = [
@@ -126,8 +126,8 @@ export default function ProfilePage() {
   ] as const;
 
   return (
-    <main style={{ minHeight: "100vh", background: "#f5f7fa" }}>
-      <header style={{ background: "#fff", borderBottom: "1px solid #EDEDED", position: "sticky", top: 0, zIndex: 100 }}>
+    <main style={{ minHeight: "100vh", background: "#F6F0E8" }}>
+      <header style={{ background: "#FBF7F1", borderBottom: "1px solid #E8DFD2", position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ height: 8, background: "#F58220" }} />
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 16px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
@@ -135,7 +135,7 @@ export default function ProfilePage() {
             <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: "#3A3A3A", letterSpacing: 2 }}>LUNA</span>
           </Link>
           <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-            <Link href="/menu" style={{ fontSize: 14, fontWeight: 600, color: "#a0aec0", textDecoration: "none" }}>Меню</Link>
+            <Link href="/menu" style={{ fontSize: 14, fontWeight: 600, color: "#8A8178", textDecoration: "none" }}>Меню</Link>
             <button onClick={logout} style={{ fontSize: 14, fontWeight: 600, color: "#F58220", background: "none", border: "none", cursor: "pointer" }}>Выйти</button>
           </div>
         </div>
@@ -154,19 +154,19 @@ export default function ProfilePage() {
               {guest.segment}
             </div>
             <div style={{ background: "#fff", borderRadius: 14, padding: "14px 24px", textAlign: "center" }}>
-              <p style={{ fontSize: 12, color: "#a0aec0", marginBottom: 4 }}>Бонусы</p>
+              <p style={{ fontSize: 12, color: "#8A8178", marginBottom: 4 }}>Бонусы</p>
               <p style={{ fontWeight: 800, fontSize: 28, color: "#F58220" }}>{guest.bonuses}</p>
             </div>
           </div>
         </div>
 
         {/* Табы */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 20, background: "#fff", borderRadius: 14, padding: 6, boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 20, background: "#FBF7F1", border: "1px solid #F1E9DC", borderRadius: 14, padding: 6, boxShadow: "0 1px 2px rgba(92,70,46,0.04), 0 6px 16px rgba(92,70,46,0.06)" }}>
           {tabs.map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "none", fontWeight: 700, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap",
                 background: activeTab === tab.key ? "#F58220" : "transparent",
-                color: activeTab === tab.key ? "#fff" : "#a0aec0" }}>
+                color: activeTab === tab.key ? "#fff" : "#8A8178" }}>
               {tab.label}
             </button>
           ))}
@@ -177,7 +177,7 @@ export default function ProfilePage() {
           <div>
             {orders.length === 0 ? (
               <div style={{ ...cardS, padding: 48, textAlign: "center" }}>
-                <p style={{ fontSize: 16, color: "#a0aec0", marginBottom: 20 }}>У вас пока нет заказов</p>
+                <p style={{ fontSize: 16, color: "#8A8178", marginBottom: 20 }}>У вас пока нет заказов</p>
                 <Link href="/menu" style={{ background: "#F58220", color: "#fff", padding: "12px 28px", borderRadius: 12, textDecoration: "none", fontWeight: 700 }}>
                   Перейти в меню
                 </Link>
@@ -185,20 +185,20 @@ export default function ProfilePage() {
             ) : orders.map(order => (
               <Link key={order.id} href={`/orders/${order.id}`} style={{ ...cardS, display: "flex", alignItems: "center", justifyContent: "space-between", textDecoration: "none", gap: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                  <div style={{ background: "#f0f3f7", borderRadius: 10, padding: "8px 14px" }}>
+                  <div style={{ background: "#F3ECE1", borderRadius: 10, padding: "8px 14px" }}>
                     <span style={{ fontWeight: 800, fontSize: 15, color: "#F58220" }}>№{order.number}</span>
                   </div>
                   <div>
-                    <p style={{ fontWeight: 700, fontSize: 15, color: "#2c3e50", marginBottom: 4 }}>
-                      <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: statusColors[order.status] ?? "#a0aec0", marginRight: 6 }} />
+                    <p style={{ fontWeight: 700, fontSize: 15, color: "#1C2430", marginBottom: 4 }}>
+                      <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: statusColors[order.status] ?? "#8A8178", marginRight: 6 }} />
                       {statusLabels[order.status] || order.status}
                     </p>
-                    <p style={{ fontSize: 13, color: "#a0aec0" }}>
+                    <p style={{ fontSize: 13, color: "#8A8178" }}>
                       {new Date(order.createdAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
                     </p>
                   </div>
                 </div>
-                <span style={{ fontWeight: 800, fontSize: 20, color: "#2c3e50" }}>{order.total} ₽</span>
+                <span style={{ fontWeight: 800, fontSize: 20, color: "#1C2430" }}>{order.total} ₽</span>
               </Link>
             ))}
           </div>
@@ -209,13 +209,13 @@ export default function ProfilePage() {
           <div>
             {bonusHistory.length === 0 ? (
               <div style={{ ...cardS, padding: 48, textAlign: "center" }}>
-                <p style={{ fontSize: 16, color: "#a0aec0" }}>История бонусов пуста</p>
+                <p style={{ fontSize: 16, color: "#8A8178" }}>История бонусов пуста</p>
               </div>
             ) : bonusHistory.map(tx => (
               <div key={tx.id} style={{ ...cardS, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
                 <div>
-                  <p style={{ fontWeight: 600, fontSize: 15, color: "#2c3e50", marginBottom: 4 }}>{tx.reason}</p>
-                  <p style={{ fontSize: 13, color: "#a0aec0" }}>
+                  <p style={{ fontWeight: 600, fontSize: 15, color: "#1C2430", marginBottom: 4 }}>{tx.reason}</p>
+                  <p style={{ fontSize: 13, color: "#8A8178" }}>
                     {new Date(tx.createdAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
@@ -232,7 +232,7 @@ export default function ProfilePage() {
           <div>
             {addresses.length === 0 ? (
               <div style={{ ...cardS, padding: 48, textAlign: "center" }}>
-                <p style={{ fontSize: 16, color: "#a0aec0", marginBottom: 20 }}>Нет сохранённых адресов</p>
+                <p style={{ fontSize: 16, color: "#8A8178", marginBottom: 20 }}>Нет сохранённых адресов</p>
                 <Link href="/checkout" style={{ background: "#F58220", color: "#fff", padding: "12px 28px", borderRadius: 12, textDecoration: "none", fontWeight: 700 }}>
                   Добавить адрес
                 </Link>
@@ -240,10 +240,10 @@ export default function ProfilePage() {
             ) : addresses.map(addr => (
               <div key={addr.id} style={cardS}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                  <span style={{ fontWeight: 700, fontSize: 15, color: "#2c3e50" }}>{addr.label}</span>
+                  <span style={{ fontWeight: 700, fontSize: 15, color: "#1C2430" }}>{addr.label}</span>
                   {addr.isDefault && <span style={{ background: "#F58220", color: "#fff", fontSize: 11, padding: "2px 8px", borderRadius: 6, fontWeight: 700 }}>По умолчанию</span>}
                 </div>
-                <p style={{ fontSize: 14, color: "#a0aec0" }}>{addr.street}, {addr.building}{addr.apartment && `, кв. ${addr.apartment}`}</p>
+                <p style={{ fontSize: 14, color: "#8A8178" }}>{addr.street}, {addr.building}{addr.apartment && `, кв. ${addr.apartment}`}</p>
               </div>
             ))}
           </div>
