@@ -43,10 +43,11 @@ export async function POST(req: NextRequest) {
       if (!name || name.length < 2) {
         return NextResponse.json({ error: "Укажите имя" }, { status: 400 });
       }
+      const tags = guest?.tags?.includes("сайт") ? guest.tags : [guest?.tags, "сайт"].filter(Boolean).join(", ");
       if (guest) {
         guest = await db.guest.update({
           where: { id: guest.id },
-          data: { name, registered: true, phoneVerified: true, lastVisit: new Date() },
+          data: { name, registered: true, phoneVerified: true, lastVisit: new Date(), tags, segment: guest.segment || "Новые" },
         });
       } else {
         guest = await db.guest.create({
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
             phoneVerified: true,
             bonuses: 0,
             segment: "Новые",
+            tags: "сайт",
           },
         });
       }
@@ -65,7 +67,7 @@ export async function POST(req: NextRequest) {
     } else {
       guest = await db.guest.update({
         where: { id: guest.id },
-        data: { phoneVerified: true, lastVisit: new Date() },
+        data: { registered: true, phoneVerified: true, lastVisit: new Date() },
       });
     }
 

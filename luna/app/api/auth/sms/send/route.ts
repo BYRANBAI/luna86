@@ -22,8 +22,30 @@ export async function POST(req: NextRequest) {
     if (purpose === "register" && existing?.registered) {
       return NextResponse.json({ error: "Этот номер уже зарегистрирован. Войдите по звонку или паролю." }, { status: 400 });
     }
-    if (purpose === "login" && !existing) {
+    if (purpose === "login" && !existing?.registered) {
       return NextResponse.json({ error: "Номер не найден. Сначала зарегистрируйтесь." }, { status: 400 });
+    }
+
+    if (purpose === "register") {
+      const siteTag = existing?.tags?.includes("сайт") ? existing.tags : [existing?.tags, "сайт"].filter(Boolean).join(", ");
+      if (existing) {
+        await db.guest.update({
+          where: { id: existing.id },
+          data: { name, tags: siteTag, lastVisit: new Date() },
+        });
+      } else {
+        await db.guest.create({
+          data: {
+            name,
+            phone,
+            registered: false,
+            phoneVerified: false,
+            bonuses: 0,
+            segment: "Новые",
+            tags: "сайт",
+          },
+        });
+      }
     }
 
     const recent = await db.smsCode.findFirst({

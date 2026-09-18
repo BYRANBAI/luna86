@@ -39,7 +39,11 @@ export async function GET(req: Request) {
     db.stockMovement.findMany({ include: { ingredient: true, order: true, supplier: true }, orderBy: { createdAt: "desc" }, take: 100 }),
     db.supplier.findMany({ orderBy: { name: "asc" } }),
     db.order.findMany({ include: { lines: { include: { item: true } }, payments: true, guest: true, employee: true, courier: true, statusHistory: true, cancellations: true }, orderBy: { createdAt: "desc" }, take: 200 }),
-    db.guest.findMany({ include: { orders: true }, orderBy: { name: "asc" } }),
+    db.guest.findMany({
+      omit: { passwordHash: true, refreshToken: true },
+      include: { orders: true, addresses: true },
+      orderBy: { createdAt: "desc" },
+    }),
     db.courier.findMany({ orderBy: { name: "asc" } }),
     db.reservation.findMany({ include: { table: true, hall: true }, orderBy: { date: "asc" } }),
     db.promotion.findMany({ orderBy: { id: "desc" } }),
