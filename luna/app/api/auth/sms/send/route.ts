@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const phone = normalizePhone(String(body.phone ?? ""));
     const method: VerifyMethod = body.method === "sms" ? "sms" : "flash_call";
-    const purpose = body.purpose === "login" ? "login" : "register";
+    const purpose = body.purpose === "login" || body.purpose === "reset" ? body.purpose : "register";
     const name = String(body.name ?? "").trim();
 
     if (!phone) {
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     if (purpose === "register" && existing?.registered) {
       return NextResponse.json({ error: "Этот номер уже зарегистрирован. Войдите по звонку или паролю." }, { status: 400 });
     }
-    if (purpose === "login" && !existing?.registered) {
+    if ((purpose === "login" || purpose === "reset") && !existing?.registered) {
       return NextResponse.json({ error: "Номер не найден. Сначала зарегистрируйтесь." }, { status: 400 });
     }
 

@@ -8,6 +8,8 @@ const ACCESS_TOKEN_SECRET = process.env.JWT_ACCESS_SECRET ?? "luna-access-secret
 const REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_SECRET ?? "luna-refresh-secret-change-in-production";
 const ACCESS_TOKEN_EXPIRY = "15m";
 const REFRESH_TOKEN_EXPIRY = "7d";
+const GUEST_ACCESS_EXPIRY = "30d";
+const GUEST_REFRESH_EXPIRY = "180d";
 
 interface TokenPayload {
   userId: number;
@@ -34,6 +36,20 @@ export function generateTokens(user: User | { userId: number; role: string }) {
     { expiresIn: REFRESH_TOKEN_EXPIRY }
   );
 
+  return { accessToken, refreshToken };
+}
+
+export function generateGuestTokens(guestId: number) {
+  const accessToken = jwt.sign(
+    { userId: guestId, role: "guest" } as TokenPayload,
+    ACCESS_TOKEN_SECRET,
+    { expiresIn: GUEST_ACCESS_EXPIRY }
+  );
+  const refreshToken = jwt.sign(
+    { userId: guestId } as RefreshTokenPayload,
+    REFRESH_TOKEN_SECRET,
+    { expiresIn: GUEST_REFRESH_EXPIRY }
+  );
   return { accessToken, refreshToken };
 }
 

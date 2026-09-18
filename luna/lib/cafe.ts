@@ -6,7 +6,7 @@ export const CAFE_INFO = {
   phone: "+7 (929) 298-28-28",
   phoneHref: "+79292982828",
   hours: "Пн–Вс 10:00–23:00",
-  hoursShort: "Работаем с 10 до 23",
+  hoursShort: "Работаем с 10 до 23 часов",
   gisFirmId: "70000001111680873",
   gisUrl: "https://2gis.ru/pokachi/firm/70000001111680873",
   gisRating: "5,0",

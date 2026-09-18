@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { guestFetch } from "@/lib/guest-session";
 
 interface CartItem {
   itemId: number;
@@ -90,21 +91,18 @@ export default function CheckoutPage() {
   };
 
   const loadGuest = async () => {
-    const token = localStorage.getItem("guestToken");
     const guestId = localStorage.getItem("guestId");
-    if (!token || !guestId) {
+    if (!guestId) {
       router.push("/menu?tab=profile");
       return;
     }
 
     try {
-      const res = await fetch(`/api/guests/${guestId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await guestFetch(`/api/guests/${guestId}`);
       if (res.ok) {
         const data = await res.json();
         setGuest(data);
-        loadAddresses(parseInt(guestId), token);
+        loadAddresses(parseInt(guestId));
       } else {
         router.push("/menu?tab=profile");
       }
@@ -114,11 +112,9 @@ export default function CheckoutPage() {
     }
   };
 
-  const loadAddresses = async (guestId: number, token: string) => {
+  const loadAddresses = async (guestId: number) => {
     try {
-      const res = await fetch(`/api/guests/${guestId}/addresses`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await guestFetch(`/api/guests/${guestId}/addresses`);
       if (res.ok) {
         const data = await res.json();
         setAddresses(data);
@@ -146,17 +142,13 @@ export default function CheckoutPage() {
       return;
     }
 
-    const token = localStorage.getItem("guestToken");
     const guestId = localStorage.getItem("guestId");
-    if (!token || !guestId) return;
+    if (!guestId) return;
 
     try {
-      const res = await fetch(`/api/guests/${guestId}/addresses`, {
+      const res = await guestFetch(`/api/guests/${guestId}/addresses`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newAddress),
       });
 
@@ -201,16 +193,12 @@ export default function CheckoutPage() {
     }
 
     setLoading(true);
-    const token = localStorage.getItem("guestToken");
     const guestId = localStorage.getItem("guestId");
 
     try {
-      const res = await fetch("/api/orders", {
+      const res = await guestFetch("/api/orders", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           guestId: parseInt(guestId!),
           items: cart,

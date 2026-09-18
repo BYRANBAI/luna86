@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
-import { generateTokens } from "@/lib/auth";
+import { generateGuestTokens } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       ?? await db.guest.findFirst({ where: { phone: formattedPhone } });
 
     if (!guest || !guest.passwordHash) {
-      return NextResponse.json({ error: "Неверный телефон или пароль" }, { status: 401 });
+      return NextResponse.json({ error: "Пароль ещё не задан. Войдите звонком или нажмите «Забыли пароль?»" }, { status: 401 });
     }
 
     const valid = await bcrypt.compare(password, guest.passwordHash);
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Неверный телефон или пароль" }, { status: 401 });
     }
 
-    const { accessToken, refreshToken } = generateTokens({ userId: guest.id, role: "guest" });
+    const { accessToken, refreshToken } = generateGuestTokens(guest.id);
 
     await db.guest.update({
       where: { id: guest.id },
@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       token: accessToken,
+      refreshToken,
       guest: {
         id: guest.id,
         name: guest.name,

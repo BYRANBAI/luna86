@@ -150,6 +150,8 @@ function Clients({ data, save }: any) {
   const [editForm, setEditForm] = useState<any>(null);
   const [bonusAmount, setBonusAmount] = useState(100);
   const [note, setNote] = useState("");
+  const [newPass, setNewPass] = useState("");
+  const [passMsg, setPassMsg] = useState("");
 
   const guests = (data.guests ?? []).filter((g: any) =>
     !search || g.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -160,6 +162,8 @@ function Clients({ data, save }: any) {
     setSelected(g);
     setEditForm({ name: g.name, phone: g.phone, email: g.email ?? "", tags: g.tags ?? "", bonuses: g.bonuses, segment: g.segment ?? "" });
     setNote("");
+    setNewPass("");
+    setPassMsg("");
   };
 
   const saveClient = () => {
@@ -173,14 +177,20 @@ function Clients({ data, save }: any) {
   };
 
   const resetPassword = async () => {
-    const newPass = prompt("Новый пароль (минимум 6 символов):");
-    if (!newPass || newPass.length < 6) return alert("Слишком короткий пароль");
+    if (!newPass || newPass.length < 6) return setPassMsg("Пароль не короче 6 символов");
+    setPassMsg("Сохраняем…");
     const r = await fetch("/api/admin/reset-guest-password", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ guestId: selected.id, password: newPass }),
     });
-    if (r.ok) alert("Пароль изменён"); else alert("Ошибка смены пароля");
+    if (r.ok) {
+      setPassMsg("Пароль изменён");
+      setNewPass("");
+      setSelected({ ...selected, hasPassword: true });
+    } else {
+      setPassMsg("Ошибка смены пароля");
+    }
   };
 
   const exportClients = () => {
@@ -303,9 +313,20 @@ function Clients({ data, save }: any) {
               {(selected.orders?.length ?? 0) > 5 && <p className="muted text-xs mt-1">...и ещё {selected.orders.length - 5}</p>}
             </div>
 
+            <div className="mb-5 rounded-lg border border-[#30425a] bg-[#0c1b2d] p-4">
+              <p className="mb-2 text-sm font-semibold">Пароль сайта</p>
+              <p className="muted mb-3 text-xs">
+                {selected.hasPassword ? "Пароль задан. Можно сменить здесь, если клиент позвонил в кафе." : "Пароль ещё не задан — клиент входит по звонку. Можно задать пароль вручную."}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <input className={input} type="text" autoComplete="new-password" placeholder="Новый пароль, от 6 символов" value={newPass} onChange={e => setNewPass(e.target.value)} style={{ flex: 1, minWidth: 180 }} />
+                <button className="btn secondary" type="button" onClick={resetPassword}>Сменить пароль</button>
+              </div>
+              {passMsg && <p className="mt-2 text-xs text-slate-300">{passMsg}</p>}
+            </div>
+
             <div className="flex flex-wrap gap-3">
               <button className="btn" onClick={saveClient}>Сохранить изменения</button>
-              <button className="btn secondary" onClick={resetPassword}>🔑 Сменить пароль</button>
               <button className="btn secondary text-xs text-red-300" onClick={() => {
                 if (confirm(`Заблокировать ${selected.name}?`)) {
                   save({ entity: "guest", id: selected.id, ...editForm, tags: (editForm.tags ? editForm.tags + ", blocked" : "blocked") });

@@ -45,13 +45,13 @@
 }
 
 .logoMark {
-  font-size: 16px;
+  font-size: 22px;
   line-height: 1;
 }
 
 .logoText {
   font-family: "Playfair Display", serif;
-  font-size: 16px;
+  font-size: 22px;
   font-weight: 700;
   color: #E91E63;
   letter-spacing: 1px;
@@ -63,10 +63,10 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: nowrap;
-  font-size: 11px;
-  color: #757575;
+  font-size: 15px;
+  color: #424242;
   line-height: 1.2;
   overflow: hidden;
 }
@@ -77,9 +77,9 @@
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 11px;
-  font-weight: 500;
-  color: #757575;
+  font-size: 15px;
+  font-weight: 600;
+  color: #424242;
 }
 
 .placeBtn,
@@ -143,7 +143,7 @@
 .metaPhone {
   color: #E91E63;
   font-weight: 700;
-  font-size: 11px;
+  font-size: 15px;
   text-decoration: none;
   white-space: nowrap;
   flex-shrink: 0;
@@ -259,6 +259,19 @@
 
   .headerInner {
     padding: 8px 10px 6px;
+  }
+
+  .logoMark {
+    font-size: 20px;
+  }
+
+  .logoText {
+    font-size: 20px;
+  }
+
+  .metaHours,
+  .metaPhone {
+    font-size: 13px;
   }
 
   .placeBtn {

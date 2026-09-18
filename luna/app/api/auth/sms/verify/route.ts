@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { normalizePhone } from "@/lib/phone";
-import { generateTokens } from "@/lib/auth";
+import { generateGuestTokens } from "@/lib/auth";
 import { checkSmsCode } from "@/lib/sms";
 
 export async function POST(req: NextRequest) {
@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const phone = normalizePhone(String(body.phone ?? ""));
     const code = String(body.code ?? "").replace(/\D/g, "");
-    const purpose = body.purpose === "login" ? "login" : "register";
+    const purpose = body.purpose === "login" || body.purpose === "reset" ? body.purpose : "register";
     const name = String(body.name ?? "").trim();
 
     if (!phone || code.length < 4 || code.length > 8) {
@@ -71,18 +71,20 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { accessToken, refreshToken } = generateTokens({ userId: guest.id, role: "guest" });
+    const { accessToken, refreshToken } = generateGuestTokens(guest.id);
     await db.guest.update({ where: { id: guest.id }, data: { refreshToken } });
 
     return NextResponse.json({
       success: true,
       token: accessToken,
+      refreshToken,
       guest: {
         id: guest.id,
         name: guest.name,
         phone: guest.phone,
         email: guest.email,
         bonuses: guest.bonuses,
+        hasPassword: Boolean(guest.passwordHash),
       },
     });
   } catch (error) {

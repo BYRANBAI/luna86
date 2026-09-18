@@ -37,6 +37,7 @@ export async function GET(
         birthday: true,
         lastVisit: true,
         createdAt: true,
+        passwordHash: true,
       },
     });
 
@@ -44,7 +45,8 @@ export async function GET(
       return NextResponse.json({ error: "Guest not found" }, { status: 404 });
     }
 
-    return NextResponse.json(guest);
+    const { passwordHash, ...safe } = guest;
+    return NextResponse.json({ ...safe, hasPassword: Boolean(passwordHash) });
   } catch (error) {
     console.error("Get guest error:", error);
     return NextResponse.json(

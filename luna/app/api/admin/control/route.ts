@@ -40,7 +40,7 @@ export async function GET(req: Request) {
     db.supplier.findMany({ orderBy: { name: "asc" } }),
     db.order.findMany({ include: { lines: { include: { item: true } }, payments: true, guest: true, employee: true, courier: true, statusHistory: true, cancellations: true }, orderBy: { createdAt: "desc" }, take: 200 }),
     db.guest.findMany({
-      omit: { passwordHash: true, refreshToken: true },
+      omit: { refreshToken: true },
       include: { orders: true, addresses: true },
       orderBy: { createdAt: "desc" },
     }),
@@ -79,7 +79,7 @@ export async function GET(req: Request) {
   const foodCost = recent.length ? Math.round(recent.reduce((sum, order) => sum + order.lines.reduce((lineSum, line) => lineSum + line.item.cost * line.qty, 0), 0) / recent.reduce((sum, order) => sum + order.total, 0) * 100) : 0;
   const occupied = new Set(orders.filter(o => o.tableNumber && !["DONE", "CANCELLED"].includes(o.status)).map(o => o.tableNumber)).size;
   const stopItems = items.filter(i => !i.active || i.stock <= 0);
-  return NextResponse.json({ categories, items, ingredients, movements, suppliers, orders, guests, couriers, reservations, promotions, promocodes, campaigns, halls, shifts, settings, auditLogs, zones, expenses, bonusRules, combos, finances, purchaseRequests, users, timeEntries, metrics: { revenue, revenue7, topItems, active, average: orders.length ? Math.round(orders.reduce((s, o) => s + o.total, 0) / orders.length) : 0, foodCost, occupied, tables: halls.reduce((s, h) => s + h.tables.length, 0), stop: stopItems.length, stopItems, lowStock: ingredients.filter(i => i.stock <= i.minStock) } });
+  return NextResponse.json({ categories, items, ingredients, movements, suppliers, orders, guests: guests.map(({ passwordHash, ...g }) => ({ ...g, hasPassword: Boolean(passwordHash) })), couriers, reservations, promotions, promocodes, campaigns, halls, shifts, settings, auditLogs, zones, expenses, bonusRules, combos, finances, purchaseRequests, users, timeEntries, metrics: { revenue, revenue7, topItems, active, average: orders.length ? Math.round(orders.reduce((s, o) => s + o.total, 0) / orders.length) : 0, foodCost, occupied, tables: halls.reduce((s, h) => s + h.tables.length, 0), stop: stopItems.length, stopItems, lowStock: ingredients.filter(i => i.stock <= i.minStock) } });
 }
 
 export async function POST(req: Request) {

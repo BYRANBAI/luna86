@@ -6,6 +6,7 @@ import ItemModal from "@/app/components/ItemModal";
 import MapModal from "@/app/components/MapModal";
 import { AccountPanel, CartPanel, type GuestTab } from "@/app/components/GuestTabs";
 import { CAFE_INFO } from "@/lib/cafe";
+import { guestFetch } from "@/lib/guest-session";
 
 interface Modifier { id: number; name: string; price: number; }
 interface Item {
@@ -95,12 +96,12 @@ export default function MenuPage() {
   };
 
   const loadGuest = () => {
-    const token = localStorage.getItem("guestToken");
     const guestId = localStorage.getItem("guestId");
-    if (!token || !guestId) return;
-    const headers = { Authorization: `Bearer ${token}` };
-    fetch(`/api/guests/${guestId}`, { headers })
-      .then(r => r.json()).then(setGuest).catch(() => {});
+    if (!guestId) return;
+    guestFetch(`/api/guests/${guestId}`)
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(setGuest)
+      .catch(() => setGuest(null));
   };
 
   const saveCart = (c: typeof cart) => { setCart(c); localStorage.setItem("cart", JSON.stringify(c)); };
