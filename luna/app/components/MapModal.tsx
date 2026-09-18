@@ -1,29 +1,38 @@
 "use client";
 
-/**
- * Вкладка «Карта»: как проехать, часы работы, телефон кафе.
- * Данные кафе — в CAFE_INFO ниже (адрес, координаты для Яндекс.Карт, телефон, часы).
- */
-
 const CAFE_INFO = {
   name: "Кафе «Луна»",
-  address: "Ул. Примерная, 1", // TODO: реальный адрес
-  lat: 56.8389, // TODO: реальные координаты
-  lon: 60.6057,
-  phone: "+7 900 000-00-01", // TODO: реальный телефон
-  hours: "Ежедневно 10:00–22:00", // TODO: реальные часы
+  address: "ул. Таёжная, 11, г. Покачи",
+  city: "ХМАО — Югра",
+  lat: 61.744247,
+  lon: 75.593837,
+  phone: "+7 (929) 298-28-28",
+  phoneHref: "+79292982828",
+  hours: "Пн–Вс 10:00–23:00",
+  gisFirmId: "70000001111680873",
+  gisUrl: "https://2gis.ru/pokachi/firm/70000001111680873",
+  gisRating: "5,0",
+  gisReviews: 11,
 };
 
 const PINK = "#E91E63";
 const GRAY = "#888";
 const DARK = "#1a1a1a";
+const GIS_GREEN = "#00B341";
+
+function gisWidgetSrc() {
+  const opt = {
+    pos: { lat: CAFE_INFO.lat, lon: CAFE_INFO.lon, zoom: 16 },
+    opt: { city: "pokachi" },
+    org: CAFE_INFO.gisFirmId,
+  };
+  return `https://widgets.2gis.com/widget?type=firmsonmap&opt=${encodeURIComponent(JSON.stringify(opt))}`;
+}
 
 export default function MapModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   if (!isOpen) return null;
 
-  const { lat, lon } = CAFE_INFO;
-  const mapSrc = `https://yandex.ru/map-widget/v1/?ll=${lon}%2C${lat}&z=17&pt=${lon}%2C${lat},pm2rdm`;
-  const routeUrl = `https://yandex.ru/maps/?rtext=~${lat}%2C${lon}&rtt=auto`;
+  const routeUrl = `${CAFE_INFO.gisUrl}/tab/howGetHere`;
 
   return (
     <div
@@ -39,7 +48,6 @@ export default function MapModal({ isOpen, onClose }: { isOpen: boolean; onClose
           padding: "20px 20px 28px",
         }}
       >
-        {/* Заголовок */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
           <div style={{ fontSize: 20, fontWeight: 800, color: DARK }}>Как нас найти</div>
           <button
@@ -49,20 +57,44 @@ export default function MapModal({ isOpen, onClose }: { isOpen: boolean; onClose
           >✕</button>
         </div>
 
-        {/* Адрес */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "12px 0" }}>
           <span style={{ fontSize: 18 }}>📍</span>
           <div>
-            <div style={{ fontSize: 12, color: GRAY }}>{CAFE_INFO.name}</div>
+            <div style={{ fontSize: 12, color: GRAY }}>{CAFE_INFO.name} · {CAFE_INFO.city}</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: DARK }}>{CAFE_INFO.address}</div>
           </div>
         </div>
 
-        {/* Яндекс.Карта */}
+        {/* Карточка 2ГИС */}
+        <a
+          href={CAFE_INFO.gisUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "flex", alignItems: "center", gap: 12, marginBottom: 12,
+            padding: "12px 14px", borderRadius: 16, textDecoration: "none",
+            background: "#F4FBF6", border: `1px solid ${GIS_GREEN}33`,
+          }}
+        >
+          <div style={{
+            width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+            background: GIS_GREEN, color: "#fff", fontWeight: 800,
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, letterSpacing: -0.4,
+          }}>2ГИС</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: DARK }}>Луна · кафе</div>
+            <div style={{ fontSize: 13, color: DARK, marginTop: 2 }}>
+              ★ {CAFE_INFO.gisRating} · {CAFE_INFO.gisReviews} оценок
+            </div>
+            <div style={{ fontSize: 12, color: GRAY, marginTop: 2 }}>Открыть карточку в 2ГИС →</div>
+          </div>
+        </a>
+
+        {/* Карта 2ГИС */}
         <div style={{ borderRadius: 16, overflow: "hidden", border: "1px solid #F0F0F0" }}>
           <iframe
-            title="Карта проезда"
-            src={mapSrc}
+            title="Карта 2ГИС"
+            src={gisWidgetSrc()}
             width="100%"
             height="260"
             frameBorder="0"
@@ -71,7 +103,6 @@ export default function MapModal({ isOpen, onClose }: { isOpen: boolean; onClose
           />
         </div>
 
-        {/* Как проехать */}
         <a
           href={routeUrl}
           target="_blank"
@@ -85,7 +116,6 @@ export default function MapModal({ isOpen, onClose }: { isOpen: boolean; onClose
           🚗 Как проехать
         </a>
 
-        {/* Часы и телефон */}
         <div style={{ marginTop: 16, borderTop: "1px solid #F0F0F0", paddingTop: 14, display: "grid", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 16 }}>🕐</span>
@@ -94,10 +124,10 @@ export default function MapModal({ isOpen, onClose }: { isOpen: boolean; onClose
               <div style={{ fontSize: 14, fontWeight: 600, color: DARK }}>{CAFE_INFO.hours}</div>
             </div>
           </div>
-          <a href={`tel:${CAFE_INFO.phone.replace(/[^+\d]/g, "")}`} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+          <a href={`tel:${CAFE_INFO.phoneHref}`} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
             <span style={{ fontSize: 16 }}>📞</span>
             <div>
-              <div style={{ fontSize: 12, color: GRAY }}>Телефон</div>
+              <div style={{ fontSize: 12, color: GRAY }}>Телефон · бронь столика</div>
               <div style={{ fontSize: 14, fontWeight: 600, color: PINK }}>{CAFE_INFO.phone}</div>
             </div>
           </a>
