@@ -1,7 +1,7 @@
 "use client";
 import { CAFE_INFO } from "@/lib/cafe";
 
-const PINK = "#E91E63";
+const PINK = "#F58220";
 const GRAY = "#888";
 const DARK = "#1a1a1a";
 const GIS_GREEN = "#00B341";

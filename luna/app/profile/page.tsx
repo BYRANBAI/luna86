@@ -100,7 +100,7 @@ export default function ProfilePage() {
     return (
       <main style={{ minHeight: "100vh", background: "#f5f7fa", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ width: 56, height: 56, borderRadius: "50%", border: "4px solid #F0F0F0", borderTopColor: "#8b9dc3", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+          <div style={{ width: 56, height: 56, borderRadius: "50%", border: "4px solid #F0F0F0", borderTopColor: "#F58220", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
           <p style={{ fontSize: 16, color: "#a0aec0" }}>Загрузка профиля...</p>
         </div>
       </main>
@@ -115,7 +115,7 @@ export default function ProfilePage() {
   };
 
   const statusColors: Record<string, string> = {
-    NEW: "#8b9dc3", CONFIRMED: "#8b9dc3", COOKING: "#FF6B00",
+    NEW: "#F58220", CONFIRMED: "#F58220", COOKING: "#FF6B00",
     READY: "#22C55E", DELIVERING: "#3B82F6", DELIVERED: "#2c3e50", CANCELLED: "#999",
   };
 
@@ -127,22 +127,23 @@ export default function ProfilePage() {
 
   return (
     <main style={{ minHeight: "100vh", background: "#f5f7fa" }}>
-      <header style={{ background: "#fff", borderBottom: "1px solid #e3e8ef", position: "sticky", top: 0, zIndex: 100 }}>
+      <header style={{ background: "#fff", borderBottom: "1px solid #EDEDED", position: "sticky", top: 0, zIndex: 100 }}>
+        <div style={{ height: 8, background: "#F58220" }} />
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 16px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
             <span style={{ fontSize: 24 }}>🌙</span>
-            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: "#E91E63", letterSpacing: 2 }}>LUNA</span>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: "#3A3A3A", letterSpacing: 2 }}>LUNA</span>
           </Link>
           <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
             <Link href="/menu" style={{ fontSize: 14, fontWeight: 600, color: "#a0aec0", textDecoration: "none" }}>Меню</Link>
-            <button onClick={logout} style={{ fontSize: 14, fontWeight: 600, color: "#8b9dc3", background: "none", border: "none", cursor: "pointer" }}>Выйти</button>
+            <button onClick={logout} style={{ fontSize: 14, fontWeight: 600, color: "#F58220", background: "none", border: "none", cursor: "pointer" }}>Выйти</button>
           </div>
         </div>
       </header>
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 16px" }}>
         {/* Шапка */}
-        <div style={{ background: "#8b9dc3", borderRadius: 20, padding: "28px 32px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 20 }}>
+        <div style={{ background: "#F58220", borderRadius: 20, padding: "28px 32px", marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 20 }}>
           <div>
             <h1 style={{ fontWeight: 800, fontSize: 28, color: "#fff", marginBottom: 6 }}>{guest.name}</h1>
             <p style={{ fontSize: 15, color: "rgba(255,255,255,0.75)", marginBottom: 2 }}>{guest.phone}</p>
@@ -154,7 +155,7 @@ export default function ProfilePage() {
             </div>
             <div style={{ background: "#fff", borderRadius: 14, padding: "14px 24px", textAlign: "center" }}>
               <p style={{ fontSize: 12, color: "#a0aec0", marginBottom: 4 }}>Бонусы</p>
-              <p style={{ fontWeight: 800, fontSize: 28, color: "#8b9dc3" }}>{guest.bonuses}</p>
+              <p style={{ fontWeight: 800, fontSize: 28, color: "#F58220" }}>{guest.bonuses}</p>
             </div>
           </div>
         </div>
@@ -164,7 +165,7 @@ export default function ProfilePage() {
           {tabs.map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "none", fontWeight: 700, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap",
-                background: activeTab === tab.key ? "#8b9dc3" : "transparent",
+                background: activeTab === tab.key ? "#F58220" : "transparent",
                 color: activeTab === tab.key ? "#fff" : "#a0aec0" }}>
               {tab.label}
             </button>
@@ -177,7 +178,7 @@ export default function ProfilePage() {
             {orders.length === 0 ? (
               <div style={{ ...cardS, padding: 48, textAlign: "center" }}>
                 <p style={{ fontSize: 16, color: "#a0aec0", marginBottom: 20 }}>У вас пока нет заказов</p>
-                <Link href="/menu" style={{ background: "#8b9dc3", color: "#fff", padding: "12px 28px", borderRadius: 12, textDecoration: "none", fontWeight: 700 }}>
+                <Link href="/menu" style={{ background: "#F58220", color: "#fff", padding: "12px 28px", borderRadius: 12, textDecoration: "none", fontWeight: 700 }}>
                   Перейти в меню
                 </Link>
               </div>
@@ -185,7 +186,7 @@ export default function ProfilePage() {
               <Link key={order.id} href={`/orders/${order.id}`} style={{ ...cardS, display: "flex", alignItems: "center", justifyContent: "space-between", textDecoration: "none", gap: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                   <div style={{ background: "#f0f3f7", borderRadius: 10, padding: "8px 14px" }}>
-                    <span style={{ fontWeight: 800, fontSize: 15, color: "#8b9dc3" }}>№{order.number}</span>
+                    <span style={{ fontWeight: 800, fontSize: 15, color: "#F58220" }}>№{order.number}</span>
                   </div>
                   <div>
                     <p style={{ fontWeight: 700, fontSize: 15, color: "#2c3e50", marginBottom: 4 }}>
@@ -218,7 +219,7 @@ export default function ProfilePage() {
                     {new Date(tx.createdAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
-                <span style={{ fontWeight: 800, fontSize: 22, color: tx.amount > 0 ? "#22C55E" : "#8b9dc3" }}>
+                <span style={{ fontWeight: 800, fontSize: 22, color: tx.amount > 0 ? "#22C55E" : "#F58220" }}>
                   {tx.amount > 0 ? "+" : ""}{tx.amount}
                 </span>
               </div>
@@ -232,7 +233,7 @@ export default function ProfilePage() {
             {addresses.length === 0 ? (
               <div style={{ ...cardS, padding: 48, textAlign: "center" }}>
                 <p style={{ fontSize: 16, color: "#a0aec0", marginBottom: 20 }}>Нет сохранённых адресов</p>
-                <Link href="/checkout" style={{ background: "#8b9dc3", color: "#fff", padding: "12px 28px", borderRadius: 12, textDecoration: "none", fontWeight: 700 }}>
+                <Link href="/checkout" style={{ background: "#F58220", color: "#fff", padding: "12px 28px", borderRadius: 12, textDecoration: "none", fontWeight: 700 }}>
                   Добавить адрес
                 </Link>
               </div>
@@ -240,7 +241,7 @@ export default function ProfilePage() {
               <div key={addr.id} style={cardS}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
                   <span style={{ fontWeight: 700, fontSize: 15, color: "#2c3e50" }}>{addr.label}</span>
-                  {addr.isDefault && <span style={{ background: "#8b9dc3", color: "#fff", fontSize: 11, padding: "2px 8px", borderRadius: 6, fontWeight: 700 }}>По умолчанию</span>}
+                  {addr.isDefault && <span style={{ background: "#F58220", color: "#fff", fontSize: 11, padding: "2px 8px", borderRadius: 6, fontWeight: 700 }}>По умолчанию</span>}
                 </div>
                 <p style={{ fontSize: 14, color: "#a0aec0" }}>{addr.street}, {addr.building}{addr.apartment && `, кв. ${addr.apartment}`}</p>
               </div>

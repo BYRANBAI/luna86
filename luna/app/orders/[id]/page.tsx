@@ -24,11 +24,11 @@ interface Order {
 }
 
 const statusMap: Record<string, { label: string; color: string; step: number }> = {
-  NEW: { label: "Принят", color: "#8b9dc3", step: 1 },
-  CONFIRMED: { label: "Подтверждён", color: "#8b9dc3", step: 2 },
-  COOKING: { label: "Готовится", color: "#8b9dc3", step: 3 },
-  READY: { label: "Готов", color: "#8b9dc3", step: 4 },
-  DELIVERING: { label: "В пути", color: "#8b9dc3", step: 5 },
+  NEW: { label: "Принят", color: "#F58220", step: 1 },
+  CONFIRMED: { label: "Подтверждён", color: "#F58220", step: 2 },
+  COOKING: { label: "Готовится", color: "#F58220", step: 3 },
+  READY: { label: "Готов", color: "#F58220", step: 4 },
+  DELIVERING: { label: "В пути", color: "#F58220", step: 5 },
   DELIVERED: { label: "Доставлен", color: "#2c3e50", step: 6 },
   CANCELLED: { label: "Отменён", color: "#a0aec0", step: 0 },
 };
@@ -82,7 +82,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
     return (
       <main style={{ minHeight: "100vh", background: "#f5f7fa", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ width: 56, height: 56, borderRadius: "50%", border: "4px solid #e3e8ef", borderTopColor: "#8b9dc3", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+          <div style={{ width: 56, height: 56, borderRadius: "50%", border: "4px solid #e3e8ef", borderTopColor: "#F58220", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
           <p style={{ fontSize: 16, color: "#a0aec0" }}>Загрузка заказа...</p>
         </div>
       </main>
@@ -94,7 +94,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
       <main style={{ minHeight: "100vh", background: "#f5f7fa", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ textAlign: "center" }}>
           <p style={{ fontSize: 20, color: "#a0aec0", marginBottom: 20 }}>Заказ не найден</p>
-          <Link href="/menu" style={{ background: "#8b9dc3", color: "#fff", padding: "12px 28px", borderRadius: 12, textDecoration: "none", fontWeight: 700 }}>
+          <Link href="/menu" style={{ background: "#F58220", color: "#fff", padding: "12px 28px", borderRadius: 12, textDecoration: "none", fontWeight: 700 }}>
             Вернуться в меню
           </Link>
         </div>
@@ -117,11 +117,12 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
 
   return (
     <main style={{ minHeight: "100vh", background: "#f5f7fa" }}>
-      <header style={{ background: "#fff", borderBottom: "1px solid #e3e8ef", position: "sticky", top: 0, zIndex: 100 }}>
+      <header style={{ background: "#fff", borderBottom: "1px solid #EDEDED", position: "sticky", top: 0, zIndex: 100 }}>
+        <div style={{ height: 8, background: "#F58220" }} />
         <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 16px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
             <span style={{ fontSize: 24 }}>🌙</span>
-            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: "#E91E63", letterSpacing: 2 }}>LUNA</span>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: "#3A3A3A", letterSpacing: 2 }}>LUNA</span>
           </Link>
           <Link href="/profile" style={{ fontSize: 14, color: "#a0aec0", textDecoration: "none", fontWeight: 600 }}>Мои заказы</Link>
         </div>
@@ -130,7 +131,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 16px" }}>
         {/* Заголовок */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <span style={{ display: "inline-block", background: "#f0f3f7", color: "#8b9dc3", borderRadius: 20, padding: "4px 16px", fontSize: 13, fontWeight: 700, marginBottom: 12 }}>
+          <span style={{ display: "inline-block", background: "#f0f3f7", color: "#F58220", borderRadius: 20, padding: "4px 16px", fontSize: 13, fontWeight: 700, marginBottom: 12 }}>
             Заказ №{order.number}
           </span>
           <h1 style={{ fontWeight: 800, fontSize: 32, color: "#2c3e50", marginBottom: 8 }}>{currentStatus.label}</h1>
@@ -149,7 +150,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
           <div style={cardS}>
             <div style={{ position: "relative", padding: "8px 0" }}>
               <div style={{ position: "absolute", left: 24, right: 24, top: 28, height: 4, background: "#e3e8ef", borderRadius: 4 }}>
-                <div style={{ height: "100%", background: "#8b9dc3", borderRadius: 4, transition: "width 0.5s", width: `${((currentStatus.step - 1) / 5) * 100}%` }} />
+                <div style={{ height: "100%", background: "#F58220", borderRadius: 4, transition: "width 0.5s", width: `${((currentStatus.step - 1) / 5) * 100}%` }} />
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", position: "relative" }}>
                 {stages.map((stage, index) => {
@@ -159,7 +160,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                       <div style={{
                         width: 48, height: 48, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: 18, marginBottom: 10, fontWeight: 700,
-                        background: active ? "#8b9dc3" : "#e3e8ef",
+                        background: active ? "#F58220" : "#e3e8ef",
                         color: active ? "#fff" : "#cbd5e0",
                         boxShadow: active ? "0 2px 8px rgba(208,2,27,0.3)" : "none",
                         transition: "all 0.3s",
@@ -179,7 +180,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
 
         {order.status === "CANCELLED" && (
           <div style={{ ...cardS, background: "#f0f3f7", textAlign: "center" }}>
-            <p style={{ fontSize: 16, color: "#8b9dc3", fontWeight: 600 }}>Заказ отменён. Если есть вопросы — свяжитесь с нами.</p>
+            <p style={{ fontSize: 16, color: "#F58220", fontWeight: 600 }}>Заказ отменён. Если есть вопросы — свяжитесь с нами.</p>
           </div>
         )}
 
@@ -214,11 +215,11 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
 
         {/* Кнопки */}
         <div style={{ display: "flex", gap: 12 }}>
-          <Link href="/menu" style={{ flex: 1, border: "2px solid #8b9dc3", color: "#8b9dc3", padding: "14px 0", borderRadius: 12, textAlign: "center", fontWeight: 700, textDecoration: "none", fontSize: 15 }}>
+          <Link href="/menu" style={{ flex: 1, border: "2px solid #F58220", color: "#F58220", padding: "14px 0", borderRadius: 12, textAlign: "center", fontWeight: 700, textDecoration: "none", fontSize: 15 }}>
             Вернуться в меню
           </Link>
           {order.status === "DELIVERED" && (
-            <Link href="/menu" style={{ flex: 1, background: "#8b9dc3", color: "#fff", padding: "14px 0", borderRadius: 12, textAlign: "center", fontWeight: 700, textDecoration: "none", fontSize: 15 }}>
+            <Link href="/menu" style={{ flex: 1, background: "#F58220", color: "#fff", padding: "14px 0", borderRadius: 12, textAlign: "center", fontWeight: 700, textDecoration: "none", fontSize: 15 }}>
               Заказать ещё раз
             </Link>
           )}

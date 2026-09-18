@@ -55,6 +55,7 @@ export default function Home() {
     <main className="min-h-screen">
       {/* Header */}
       <header className="bg-white border-b border-[var(--border)] sticky top-0 z-50 shadow-sm">
+        <div className="h-2 bg-[var(--accent-primary)]" />
         <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
             <span className="text-3xl">🌙</span>
@@ -80,7 +81,7 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-[#FF6B6B] to-[#FA5252] text-white">
+      <section className="bg-[var(--accent-primary)] text-white">
         <div className="mx-auto max-w-7xl px-6 py-20 md:py-32">
           <div className="grid gap-12 md:grid-cols-2 items-center">
             <div className="animate-fade-up">
@@ -98,8 +99,8 @@ export default function Home() {
               <div className="flex flex-wrap gap-4">
                 <Link
                   href="/menu"
-                  className="px-8 py-4 bg-white text-[#FF6B6B] rounded-xl font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105"
-                  style={{ color: '#FF6B6B' }}
+                  className="px-8 py-4 bg-white text-[var(--accent-primary)] rounded-xl font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105"
+                  style={{ color: 'var(--accent-primary)' }}
                 >
                   Открыть меню
                 </Link>

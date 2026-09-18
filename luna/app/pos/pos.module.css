@@ -1,14 +1,14 @@
 .shell {
   --bg-primary: #ffffff;
-  --bg-secondary: #f5f7fa;
-  --bg-tertiary: #eef3f8;
-  --text-primary: #1a1a1a;
-  --text-secondary: #4a5568;
-  --text-tertiary: #9ca3af;
-  --accent-primary: #d8b45b;
-  --accent-hover: #c9a44a;
-  --accent-light: rgba(216, 180, 91, 0.22);
-  --border: #d7e0ea;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #eeeeee;
+  --text-primary: #3a3a3a;
+  --text-secondary: #6b6b6b;
+  --text-tertiary: #9a9a9a;
+  --accent-primary: #f58220;
+  --accent-hover: #e26f0f;
+  --accent-light: #fff3e6;
+  --border: #ededed;
   --success: #2d5a3d;
   color-scheme: light;
 
@@ -54,7 +54,7 @@
 }
 
 .moon {
-  color: #c45c4a;
+  color: #f58220;
 }
 
 .note {
@@ -247,7 +247,7 @@
 }
 
 .price {
-  color: #c45c4a;
+  color: #f58220;
   font-weight: 800;
 }
 

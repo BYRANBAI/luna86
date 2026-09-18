@@ -232,24 +232,25 @@ export default function CheckoutPage() {
   const finalTotal = cartTotal - bonusesToUse - promoAmount;
 
   const card: React.CSSProperties = { background: "#fff", borderRadius: 16, padding: 24, marginBottom: 16, boxShadow: "0 1px 4px rgba(139, 157, 195, 0.12)" };
-  const inp2 = "w-full rounded-xl border border-[#e3e8ef] bg-[#f8f9fb] px-4 py-2 text-[#2c3e50] outline-none focus:border-[#8b9dc3] focus:bg-white";
+  const inp2 = "w-full rounded-xl border border-[#e3e8ef] bg-[#f8f9fb] px-4 py-2 text-[#2c3e50] outline-none focus:border-[#F58220] focus:bg-white";
   const sectionTitle: React.CSSProperties = { fontWeight: 800, fontSize: 18, color: "#2c3e50", marginBottom: 16 };
 
   if (cart.length === 0) return (
     <main style={{ minHeight: "100vh", background: "#f5f7fa", padding: "48px 24px", color: "#2c3e50", textAlign: "center" }}>
       <h1 style={{ fontSize: 28, fontWeight: 800 }}>Корзина пока пуста</h1>
       <p style={{ margin: "16px 0 24px" }}>Добавьте блюда из меню, чтобы оформить заказ.</p>
-      <Link href="/menu" style={{ display: "inline-block", padding: "14px 24px", background: "#E91E63", color: "white", borderRadius: 12 }}>Выбрать блюда</Link>
+      <Link href="/menu" style={{ display: "inline-block", padding: "14px 24px", background: "#F58220", color: "white", borderRadius: 12 }}>Выбрать блюда</Link>
     </main>
   );
 
   return (
     <main style={{ minHeight: "100vh", background: "#f5f7fa" }}>
-      <header style={{ background: "#fff", borderBottom: "1px solid #e3e8ef", position: "sticky", top: 0, zIndex: 100 }}>
+      <header style={{ background: "#fff", borderBottom: "1px solid #EDEDED", position: "sticky", top: 0, zIndex: 100 }}>
+        <div style={{ height: 8, background: "#F58220" }} />
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 16px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
             <span style={{ fontSize: 24 }}>🌙</span>
-            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: "#E91E63", letterSpacing: 2 }}>LUNA</span>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: "#3A3A3A", letterSpacing: 2 }}>LUNA</span>
           </Link>
           <Link href="/menu" style={{ fontSize: 14, color: "#a0aec0", textDecoration: "none", fontWeight: 600 }}>← Вернуться в меню</Link>
         </div>
@@ -265,12 +266,12 @@ export default function CheckoutPage() {
               <div style={sectionTitle}>Адрес доставки</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {addresses.map((addr) => (
-                  <label key={addr.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: 16, borderRadius: 12, border: `2px solid ${selectedAddress === addr.id ? "#8b9dc3" : "#e3e8ef"}`, background: selectedAddress === addr.id ? "#f0f3f7" : "#fff", cursor: "pointer" }}>
+                  <label key={addr.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: 16, borderRadius: 12, border: `2px solid ${selectedAddress === addr.id ? "#F58220" : "#e3e8ef"}`, background: selectedAddress === addr.id ? "#f0f3f7" : "#fff", cursor: "pointer" }}>
                     <input type="radio" name="address" checked={selectedAddress === addr.id} onChange={() => setSelectedAddress(addr.id)} style={{ marginTop: 2 }} />
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                         <span style={{ fontWeight: 700, fontSize: 14, color: "#2c3e50" }}>{addr.label}</span>
-                        {addr.isDefault && <span style={{ background: "#8b9dc3", color: "#fff", fontSize: 11, padding: "2px 8px", borderRadius: 6, fontWeight: 700 }}>По умолчанию</span>}
+                        {addr.isDefault && <span style={{ background: "#F58220", color: "#fff", fontSize: 11, padding: "2px 8px", borderRadius: 6, fontWeight: 700 }}>По умолчанию</span>}
                       </div>
                       <p style={{ fontSize: 13, color: "#a0aec0" }}>{addr.street}, {addr.building}{addr.apartment && `, кв. ${addr.apartment}`}</p>
                     </div>
@@ -282,14 +283,14 @@ export default function CheckoutPage() {
                     + Добавить новый адрес
                   </button>
                 ) : (
-                  <div style={{ padding: 16, borderRadius: 12, border: "2px solid #8b9dc3", background: "#f0f3f7", display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ padding: 16, borderRadius: 12, border: "2px solid #F58220", background: "#f0f3f7", display: "flex", flexDirection: "column", gap: 10 }}>
                     <input type="text" placeholder="Улица" value={newAddress.street} onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })} className={inp2} />
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                       <input type="text" placeholder="Дом" value={newAddress.building} onChange={(e) => setNewAddress({ ...newAddress, building: e.target.value })} className={inp2} />
                       <input type="text" placeholder="Квартира" value={newAddress.apartment} onChange={(e) => setNewAddress({ ...newAddress, apartment: e.target.value })} className={inp2} />
                     </div>
                     <div style={{ display: "flex", gap: 10 }}>
-                      <button onClick={saveNewAddress} style={{ flex: 1, background: "#8b9dc3", color: "#fff", border: "none", borderRadius: 10, padding: "10px 0", fontWeight: 700, cursor: "pointer" }}>Сохранить</button>
+                      <button onClick={saveNewAddress} style={{ flex: 1, background: "#F58220", color: "#fff", border: "none", borderRadius: 10, padding: "10px 0", fontWeight: 700, cursor: "pointer" }}>Сохранить</button>
                       <button onClick={() => setShowNewAddress(false)} style={{ padding: "10px 20px", border: "1.5px solid #e3e8ef", borderRadius: 10, background: "#fff", color: "#a0aec0", fontWeight: 600, cursor: "pointer" }}>Отмена</button>
                     </div>
                   </div>
@@ -302,7 +303,7 @@ export default function CheckoutPage() {
               <div style={card}>
                 <div style={sectionTitle}>Бонусы</div>
                 <p style={{ fontSize: 14, color: "#a0aec0", marginBottom: 12 }}>
-                  Доступно: <span style={{ color: "#8b9dc3", fontWeight: 700 }}>{guest.bonuses}</span> бонусов (можно списать до {maxBonusUse} ₽)
+                  Доступно: <span style={{ color: "#F58220", fontWeight: 700 }}>{guest.bonuses}</span> бонусов (можно списать до {maxBonusUse} ₽)
                 </p>
                 <input type="number" min="0" max={maxBonusUse} value={bonusesToUse}
                   onChange={(e) => setBonusesToUse(Math.min(maxBonusUse, parseInt(e.target.value) || 0))}
@@ -315,7 +316,7 @@ export default function CheckoutPage() {
               <div style={sectionTitle}>Способ оплаты</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {[{ val: "card_delivery", label: "💳 Картой курьеру" }, { val: "cash", label: "💵 Наличными курьеру" }].map(opt => (
-                  <label key={opt.val} style={{ display: "flex", alignItems: "center", gap: 12, padding: 16, borderRadius: 12, border: `2px solid ${paymentMethod === opt.val ? "#8b9dc3" : "#e3e8ef"}`, background: paymentMethod === opt.val ? "#f0f3f7" : "#fff", cursor: "pointer" }}>
+                  <label key={opt.val} style={{ display: "flex", alignItems: "center", gap: 12, padding: 16, borderRadius: 12, border: `2px solid ${paymentMethod === opt.val ? "#F58220" : "#e3e8ef"}`, background: paymentMethod === opt.val ? "#f0f3f7" : "#fff", cursor: "pointer" }}>
                     <input type="radio" name="payment" value={opt.val} checked={paymentMethod === opt.val} onChange={(e) => setPaymentMethod(e.target.value)} />
                     <span style={{ fontWeight: 600, fontSize: 15, color: "#2c3e50" }}>{opt.label}</span>
                   </label>
@@ -337,12 +338,12 @@ export default function CheckoutPage() {
               <div style={{display: "flex", gap: 10, marginBottom: 8}}>
                 <input type="text" value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                   placeholder="Введите промокод" className={inp2} style={{flex: 1}} />
-                <button onClick={applyPromoCode} style={{background: "#8b9dc3", color: "#fff", border: "none", borderRadius: 10, padding: "0 24px", fontWeight: 700, cursor: "pointer"}}>
+                <button onClick={applyPromoCode} style={{background: "#F58220", color: "#fff", border: "none", borderRadius: 10, padding: "0 24px", fontWeight: 700, cursor: "pointer"}}>
                   Применить
                 </button>
               </div>
               {promoDiscount > 0 && <p style={{fontSize: 14, color: "#22C55E", fontWeight: 600}}>✓ Скидка {promoDiscount}% применена</p>}
-              {promoError && <p style={{fontSize: 14, color: "#8b9dc3"}}>{promoError}</p>}
+              {promoError && <p style={{fontSize: 14, color: "#F58220"}}>{promoError}</p>}
               <p style={{fontSize: 12, color: "#AAA", marginTop: 8}}>Например: WELCOME15, SALE10</p>
             </div>
           </div>
@@ -381,7 +382,7 @@ export default function CheckoutPage() {
                 </div>
                 {bonusesToUse > 0 && (
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
-                    <span style={{ color: "#a0aec0" }}>Списано бонусов</span><span style={{ fontWeight: 700, color: "#8b9dc3" }}>−{bonusesToUse} ₽</span>
+                    <span style={{ color: "#a0aec0" }}>Списано бонусов</span><span style={{ fontWeight: 700, color: "#F58220" }}>−{bonusesToUse} ₽</span>
                   </div>
                 )}
                 {promoDiscount > 0 && (
@@ -396,7 +397,7 @@ export default function CheckoutPage() {
               </div>
 
               <button onClick={placeOrder} disabled={loading || !selectedAddress} style={{
-                width: "100%", background: loading || !selectedAddress ? "#ccc" : "#8b9dc3",
+                width: "100%", background: loading || !selectedAddress ? "#ccc" : "#F58220",
                 color: "#fff", border: "none", borderRadius: 12, padding: "14px 0",
                 fontWeight: 800, fontSize: 16, cursor: loading || !selectedAddress ? "not-allowed" : "pointer"
               }}>

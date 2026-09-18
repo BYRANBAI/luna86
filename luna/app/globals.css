@@ -1,82 +1,41 @@
 @import "tailwindcss";
 
 :root {
-  /* Restaurant App Color Palette */
   --bg-primary: #FFFFFF;
-  --bg-secondary: #F8F9FA;
-  --bg-tertiary: #F1F3F5;
-  
-  --text-primary: #1A1A1A;
-  --text-secondary: #4A5568;
-  --text-tertiary: #9CA3AF;
-  
-  --accent-primary: #FF6B6B;
-  --accent-hover: #FA5252;
-  --accent-light: #FFE3E3;
-  
+  --bg-secondary: #F5F5F5;
+  --bg-tertiary: #EEEEEE;
+
+  --text-primary: #3A3A3A;
+  --text-secondary: #6B6B6B;
+  --text-tertiary: #9A9A9A;
+
+  --accent-primary: #F58220;
+  --accent-hover: #E26F0F;
+  --accent-light: #FFF3E6;
+
   --success: #51CF66;
-  --warning: #FFC107;
+  --warning: #F58220;
   --info: #4DABF7;
-  
-  --border: #E9ECEF;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-  
+
+  --border: #EDEDED;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.08);
+
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 20px;
-  
+
   color-scheme: light;
 }
 
 .crm-theme,
 .staff-theme {
-  --bg-primary: #102137;
-  --bg-secondary: #0c1b2d;
-  --bg-tertiary: #182a42;
-  --text-primary: #f4efe5;
-  --text-secondary: #bdcadd;
-  --text-tertiary: #a8b8ce;
-  --border: #334963;
-  color-scheme: dark;
-}
-
-.staff-theme {
-  --bg-secondary: #07111f;
-  --accent-primary: #d8b45b;
-  --accent-hover: #c9a44a;
-  --accent-light: rgba(216, 180, 91, 0.18);
-  --border: #2a425c;
   min-height: 100dvh;
-  background:
-    radial-gradient(1200px 500px at 10% -10%, rgba(216, 180, 91, 0.08), transparent 55%),
-    radial-gradient(900px 420px at 100% 0%, rgba(45, 90, 61, 0.14), transparent 50%),
-    var(--bg-secondary);
+  background: var(--bg-secondary);
   color: var(--text-primary);
-}
-
-.staff-theme .panel {
-  background: rgba(16, 33, 55, 0.92);
-  border-color: var(--border);
-}
-
-.staff-theme .panel:hover {
-  transform: none;
-  box-shadow: var(--shadow-sm);
-  border-color: var(--border);
-}
-
-.staff-theme .btn.secondary {
-  background: #15263c;
-  color: var(--text-primary);
-  border-color: var(--border);
-}
-
-.staff-theme .btn.secondary:hover {
-  background: var(--bg-tertiary);
-  border-color: var(--accent-primary);
+  color-scheme: light;
 }
 
 html {

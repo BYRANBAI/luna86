@@ -61,14 +61,14 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   }, [router, pathname]);
   if (pathname === "/admin/login") return <>{children}</>;
   const allowed = user ? (roles[user.role] ?? []) : sections.map(x => x[0]);
-  return <div className="crm-theme min-h-screen bg-[#07111f] text-[#f4efe5] md:flex">
-    <aside className="w-full border-b border-[#233650] bg-[#0c1b2d] p-4 md:min-h-screen md:w-64 md:border-b-0 md:border-r">
+  return <div className="crm-theme min-h-screen bg-[#F5F5F5] text-[#3A3A3A] md:flex">
+    <aside className="w-full border-b border-[#EDEDED] bg-white p-4 md:min-h-screen md:w-64 md:border-b-0 md:border-r">
       <button type="button" onClick={() => router.push("/")} className="mb-5 block text-left text-xl font-bold"><span className="accent">◐</span> ЛУНА · ADMIN</button>
-      <p className="muted mb-3 text-xs">Кафе «Луна» · Москва</p>
-      <nav className="grid grid-cols-2 gap-1 md:block">{sections.filter(s => allowed.includes(s[0])).map(([key, label]) => <Link className={`mb-1 block rounded-lg px-3 py-2 text-sm ${pathname.includes(`/admin/${key}`) || pathname === "/admin" && key === "dashboard" ? "bg-[#d8a94f] text-[#151b27]" : "hover:bg-[#182a42]"}`} href={key === "dashboard" ? "/admin" : `/admin/${key}`} key={key}>{label}</Link>)}</nav>
+      <p className="muted mb-3 text-xs">Кафе «Луна» · Покачи</p>
+      <nav className="grid grid-cols-2 gap-1 md:block">{sections.filter(s => allowed.includes(s[0])).map(([key, label]) => <Link className={`mb-1 block rounded-lg px-3 py-2 text-sm ${pathname.includes(`/admin/${key}`) || pathname === "/admin" && key === "dashboard" ? "bg-[#F58220] text-white" : "hover:bg-[#FFF3E6]"}`} href={key === "dashboard" ? "/admin" : `/admin/${key}`} key={key}>{label}</Link>)}</nav>
     </aside>
     <div className="min-w-0 flex-1">
-      <header className="flex items-center justify-between border-b border-[#233650] px-5 py-4"><div><b>Панель управления</b><p className="muted text-xs">Единые данные SQLite</p></div><div className="flex items-center gap-3 text-sm"><span>{user?.name} · {user?.role}</span><button className="btn secondary text-xs" onClick={async () => { sessionStorage.removeItem(USER_KEY); await fetch("/api/auth/logout", { method: "POST" }); router.replace("/admin/login"); }}>Выйти</button></div></header>
+      <header className="flex items-center justify-between border-b border-[#EDEDED] bg-white px-5 py-4"><div><b>Панель управления</b><p className="muted text-xs">Единые данные SQLite</p></div><div className="flex items-center gap-3 text-sm"><span>{user?.name} · {user?.role}</span><button className="btn secondary text-xs" onClick={async () => { sessionStorage.removeItem(USER_KEY); await fetch("/api/auth/logout", { method: "POST" }); router.replace("/admin/login"); }}>Выйти</button></div></header>
       <main className="mx-auto max-w-[1500px] p-5">{children}</main>
     </div>
   </div>;

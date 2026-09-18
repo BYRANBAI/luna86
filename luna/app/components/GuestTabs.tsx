@@ -13,10 +13,10 @@ interface Guest { name: string; phone: string; email?: string; bonuses: number; 
 interface Order { id: number; number: string; status: string; total: number; createdAt: string; }
 interface Address { id: number; street: string; building: string; apartment?: string; }
 interface Bonus { id: number; reason: string; amount: number; }
-const card = { padding: 20, borderRadius: 16, background: "#252525", marginBottom: 12 };
-const action = { padding: "12px 18px", borderRadius: 12, border: "none", background: "#E91E63", color: "white", cursor: "pointer", display: "inline-block", textDecoration: "none" };
+const card = { padding: 20, borderRadius: 4, background: "#FFFFFF", marginBottom: 12, border: "1px solid #EDEDED", boxShadow: "0 8px 24px rgba(0,0,0,0.05)" };
+const action = { padding: "12px 18px", borderRadius: 12, border: "none", background: "#F58220", color: "white", cursor: "pointer", display: "inline-block", textDecoration: "none" };
 const statuses: Record<string, string> = { NEW: "Принят", CONFIRMED: "Подтверждён", COOKING: "Готовится", READY: "Готов", DELIVERY_ASSIGNED: "Курьер назначен", IN_DELIVERY: "В пути", DELIVERING: "В пути", DELIVERED: "Доставлен", DONE: "Завершён", CANCELLED: "Отменён" };
-const inp = { width: "100%", border: "1px solid #333", borderRadius: 12, padding: "12px 14px", fontSize: 15, outline: "none", background: "#1A1A1A", color: "#fff", boxSizing: "border-box" as const, marginBottom: 10 };
+const inp = { width: "100%", border: "1px solid #EDEDED", borderRadius: 4, padding: "12px 14px", fontSize: 15, outline: "none", background: "#FFFFFF", color: "#3A3A3A", boxSizing: "border-box" as const, marginBottom: 10 };
 
 function PhoneField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
@@ -38,7 +38,7 @@ function SupportNote() {
   return (
     <p style={{ fontSize: 12, color: "#888", marginTop: 14, lineHeight: 1.45 }}>
       Не получается войти? Напишите в техподдержку или позвоните администратору{" "}
-      <a href={`tel:${CAFE_INFO.phoneHref}`} style={{ color: "#E91E63", fontWeight: 700 }}>{CAFE_INFO.phone}</a>.
+      <a href={`tel:${CAFE_INFO.phoneHref}`} style={{ color: "#F58220", fontWeight: 700 }}>{CAFE_INFO.phone}</a>.
       Пароль также могут сменить в кафе через CRM.
     </p>
   );
@@ -71,10 +71,10 @@ function SetPasswordForm({ title, onDone }: { title: string; onDone: () => void 
 
   return (
     <form onSubmit={submit}>
-      <p style={{ fontSize: 13, color: "#bbb", marginBottom: 12 }}>{title}</p>
+      <p style={{ fontSize: 13, color: "#8A8A8A", marginBottom: 12 }}>{title}</p>
       <input style={inp} type="password" placeholder="Пароль" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
       <input style={inp} type="password" placeholder="Повторите пароль" value={confirm} onChange={e => setConfirm(e.target.value)} required minLength={6} />
-      {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+      {error && <p style={{ color: "#F58220", fontSize: 13, marginBottom: 12 }}>{error}</p>}
       <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
         {loading ? "Сохраняем…" : "Сохранить пароль"}
       </button>
@@ -188,7 +188,7 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
           {(["login", "register"] as const).map(t => (
             <button key={t} type="button" onClick={() => resetMode(t)}
               style={{ flex: 1, padding: "10px 0", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer",
-                background: mode === t ? "#E91E63" : "#1A1A1A", color: mode === t ? "#fff" : "#bbb" }}>
+                background: mode === t ? "#F58220" : "#FFF3E6", color: mode === t ? "#fff" : "#3A3A3A" }}>
               {t === "login" ? "Войти" : "Регистрация"}
             </button>
           ))}
@@ -204,10 +204,10 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
 
       {mode === "register" && step === "form" && (
         <form onSubmit={e => { e.preventDefault(); void sendCode("flash_call"); }}>
-          <p style={{ fontSize: 13, color: "#bbb", marginBottom: 12 }}>Позвоним-сбросом: код — последние цифры входящего номера.</p>
+          <p style={{ fontSize: 13, color: "#8A8A8A", marginBottom: 12 }}>Позвоним-сбросом: код — последние цифры входящего номера.</p>
           <input style={inp} type="text" placeholder="Ваше имя" value={name} onChange={e => setName(e.target.value)} required />
           <PhoneField value={phone} onChange={setPhone} />
-          {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+          {error && <p style={{ color: "#F58220", fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
             {loading ? "Звоним…" : "Позвонить мне"}
           </button>
@@ -216,9 +216,9 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
 
       {mode === "register" && step === "code" && (
         <form onSubmit={verifyCode}>
-          <p style={{ fontSize: 13, color: "#bbb", marginBottom: 12 }}>{codePrompt}</p>
+          <p style={{ fontSize: 13, color: "#8A8A8A", marginBottom: 12 }}>{codePrompt}</p>
           <input style={inp} inputMode="numeric" maxLength={codeLength} placeholder={verifyMethod === "flash_call" ? "Последние цифры номера" : "Код из SMS"} value={code} onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, codeLength))} required />
-          {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+          {error && <p style={{ color: "#F58220", fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
             {loading ? "Проверяем…" : "Подтвердить номер"}
           </button>
@@ -235,11 +235,11 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
         <form onSubmit={passwordLogin}>
           <PhoneField value={phone} onChange={setPhone} />
           <input style={inp} type="password" placeholder="Пароль" value={password} onChange={e => setPassword(e.target.value)} required />
-          {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+          {error && <p style={{ color: "#F58220", fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
             {loading ? "Подождите…" : "Войти"}
           </button>
-          <button type="button" onClick={() => { setMode("reset"); setLoginBy("call"); setStep("form"); setError(""); }} style={{ background: "none", border: "none", color: "#E91E63", fontSize: 13, fontWeight: 700, marginTop: 10, cursor: "pointer", padding: 0 }}>
+          <button type="button" onClick={() => { setMode("reset"); setLoginBy("call"); setStep("form"); setError(""); }} style={{ background: "none", border: "none", color: "#F58220", fontSize: 13, fontWeight: 700, marginTop: 10, cursor: "pointer", padding: 0 }}>
             Забыли пароль?
           </button>
           <button type="button" onClick={() => { setLoginBy("call"); setStep("form"); setError(""); }} style={{ ...action, width: "100%", marginTop: 8, background: "#333" }}>
@@ -252,7 +252,7 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
       {mode === "login" && loginBy === "call" && step === "form" && (
         <form onSubmit={e => { e.preventDefault(); void sendCode("flash_call"); }}>
           <PhoneField value={phone} onChange={setPhone} />
-          {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+          {error && <p style={{ color: "#F58220", fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
             {loading ? "Звоним…" : "Позвонить мне"}
           </button>
@@ -265,9 +265,9 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
 
       {mode === "login" && loginBy === "call" && step === "code" && (
         <form onSubmit={verifyCode}>
-          <p style={{ fontSize: 13, color: "#bbb", marginBottom: 12 }}>{codePrompt}</p>
+          <p style={{ fontSize: 13, color: "#8A8A8A", marginBottom: 12 }}>{codePrompt}</p>
           <input style={inp} inputMode="numeric" maxLength={codeLength} placeholder={verifyMethod === "flash_call" ? "Последние цифры номера" : "Код из SMS"} value={code} onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, codeLength))} required />
-          {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+          {error && <p style={{ color: "#F58220", fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
             {loading ? "Проверяем…" : "Войти"}
           </button>
@@ -281,9 +281,9 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
 
       {mode === "reset" && step === "form" && (
         <form onSubmit={e => { e.preventDefault(); void sendCode("flash_call"); }}>
-          <p style={{ fontSize: 13, color: "#bbb", marginBottom: 12 }}>Восстановление пароля: позвоним-сбросом, код — последние цифры входящего номера.</p>
+          <p style={{ fontSize: 13, color: "#8A8A8A", marginBottom: 12 }}>Восстановление пароля: позвоним-сбросом, код — последние цифры входящего номера.</p>
           <PhoneField value={phone} onChange={setPhone} />
-          {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+          {error && <p style={{ color: "#F58220", fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
             {loading ? "Звоним…" : "Позвонить мне"}
           </button>
@@ -296,9 +296,9 @@ function GuestAuthForm({ onSuccess }: { onSuccess: () => void }) {
 
       {mode === "reset" && step === "code" && (
         <form onSubmit={verifyCode}>
-          <p style={{ fontSize: 13, color: "#bbb", marginBottom: 12 }}>{codePrompt}</p>
+          <p style={{ fontSize: 13, color: "#8A8A8A", marginBottom: 12 }}>{codePrompt}</p>
           <input style={inp} inputMode="numeric" maxLength={codeLength} placeholder={verifyMethod === "flash_call" ? "Последние цифры номера" : "Код из SMS"} value={code} onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, codeLength))} required />
-          {error && <p style={{ color: "#E91E63", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+          {error && <p style={{ color: "#F58220", fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <button type="submit" disabled={loading} style={{ ...action, width: "100%", opacity: loading ? 0.7 : 1 }}>
             {loading ? "Проверяем…" : "Подтвердить"}
           </button>
@@ -319,7 +319,7 @@ export function CartPanel({ cart, onChange, onMenu }: { cart: CartLine[]; onChan
     <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>Корзина</h1>
     {!cart.length ? <div style={card}><p style={{ marginBottom: 16 }}>Здесь пока пусто. Добавьте любимые блюда.</p><button style={action} onClick={onMenu}>Выбрать блюда</button></div> : <>
       {cart.map(line => <div key={line.itemId} style={{ ...card, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16 }}>
-        <div style={{ flex: "1 1 160px" }}><strong>{line.name}</strong><p style={{ color: "#bbb", marginTop: 6 }}>{line.price * line.qty} ₽</p></div>
+        <div style={{ flex: "1 1 160px" }}><strong>{line.name}</strong><p style={{ color: "#8A8A8A", marginTop: 6 }}>{line.price * line.qty} ₽</p></div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button style={{ ...action, minWidth: 44 }} aria-label={`Уменьшить ${line.name}`} onClick={() => quantity(line.itemId, -1)}>−</button>
           <span aria-live="polite">{line.qty}</span>
@@ -360,7 +360,7 @@ export function AccountPanel({ tab, onLogout, onLogin }: { tab: "orders" | "prof
     <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>{tab === "orders" ? "Мои заказы" : "Профиль"}</h1>
     {needsLogin ? <GuestAuthForm onSuccess={() => { setNeedsLogin(false); setAttempt(x => x + 1); onLogin?.(); }} /> : error ? <div style={card} role="alert"><p style={{ marginBottom: 16 }}>{error}</p><button style={action} onClick={() => setAttempt(x => x + 1)}>Повторить</button></div> : !data ? <p role="status">Загрузка…</p> : tab === "orders" ? <>
       {!data.orders.length && <p style={card}>У вас пока нет заказов.</p>}
-      {data.orders.map(order => <Link key={order.id} href={`/orders/${order.id}`} style={{ ...card, display: "flex", gap: 16, justifyContent: "space-between", color: "inherit", textDecoration: "none" }}><div><strong>№{order.number}</strong><p>{statuses[order.status] ?? order.status}</p><small style={{ color: "#bbb" }}>{new Date(order.createdAt).toLocaleString("ru-RU")}</small></div><strong style={{ whiteSpace: "nowrap" }}>{order.total} ₽</strong></Link>)}
+      {data.orders.map(order => <Link key={order.id} href={`/orders/${order.id}`} style={{ ...card, display: "flex", gap: 16, justifyContent: "space-between", color: "inherit", textDecoration: "none" }}><div><strong>№{order.number}</strong><p>{statuses[order.status] ?? order.status}</p><small style={{ color: "#8A8A8A" }}>{new Date(order.createdAt).toLocaleString("ru-RU")}</small></div><strong style={{ whiteSpace: "nowrap" }}>{order.total} ₽</strong></Link>)}
     </> : <>
       {data.guest.hasPassword === false && (
         <div style={card}>

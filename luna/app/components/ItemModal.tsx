@@ -16,7 +16,7 @@ interface ItemModalProps {
   onAddToCart: (itemId: number, qty: number, modifiers: number[], totalPrice: number) => void;
 }
 
-const PINK = "#E91E63";
+const PINK = "#F58220";
 
 export default function ItemModal({ item, isOpen, onClose, onAddToCart }: ItemModalProps) {
   const [qty, setQty] = useState(1);
