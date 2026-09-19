@@ -373,8 +373,10 @@ export default function POS() {
     .sort((a: Any, b: Any) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const waitlist = (data.reservations || []).filter((r: Any) => r.status === "Очередь");
+  const deliverySources = ["Сайт", "Доставка", "Киоск"];
   const pickup = (data.orders || []).filter((o: Any) =>
-    !o.tableNumber && ["NEW", "COOKING", "READY"].includes(o.status)
+    ["NEW", "COOKING", "READY"].includes(o.status) &&
+    (deliverySources.includes(o.source) || !o.tableNumber)
   );
   const liveOrders = (data.orders || []).filter((o: Any) =>
     !["DONE", "CANCELLED"].includes(o.status) && (feedFilter === "Все" || o.source === feedFilter)
@@ -666,6 +668,9 @@ export default function POS() {
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-lg font-bold">№ {o.number} · {o.source}</p>
+                      {(o.tableNumber || o.statusHistory?.[0]?.note) && (
+                        <p className="text-sm text-amber-800">{o.tableNumber || o.statusHistory?.[0]?.note}</p>
+                      )}
                       <p className="text-sm">
                         {(o.lines || []).map((l: Any) => `${l.item?.name || l.name} × ${l.qty}`).join(", ")}
                       </p>

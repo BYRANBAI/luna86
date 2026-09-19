@@ -326,21 +326,28 @@ async function handleDeliveryOrder(req: NextRequest, body: any) {
       const deliveryFee = 0; // Можно добавить расчет по зонам
       const total = Math.max(0, subtotal - bonusesToUse + deliveryFee);
 
-      // Создаем заказ
+      const deliveryAddress = `${address.street}, ${address.building}${address.apartment ? `, кв. ${address.apartment}` : ""}`;
+      const addressNote = [
+        "Сайт",
+        `Адрес: ${deliveryAddress}`,
+        validated.comment ? `Комментарий: ${validated.comment}` : null,
+      ].filter(Boolean).join(" · ");
+
+      // Создаем заказ: source «Доставка» + пустой стол — чтобы заказ попал в POS «навынос» и админ «Доставка»
       const order = await tx.order.create({
         data: {
-          number: String(Math.floor(1000 + Math.random() * 8999)),
-          source: "Сайт",
+          number: String(Date.now()).slice(-6),
+          source: "Доставка",
           status: "NEW",
           total,
           discount: bonusesToUse,
           guestId: guest.id,
-          tableNumber: `${address.street}, ${address.building}${address.apartment ? `, кв. ${address.apartment}` : ""}`,
+          tableNumber: "",
           readyAt: new Date(Date.now() + 45 * 60000),
           statusHistory: {
             create: {
               status: "NEW",
-              note: validated.comment || "Заказ с сайта доставки",
+              note: addressNote,
             },
           },
           lines: {
