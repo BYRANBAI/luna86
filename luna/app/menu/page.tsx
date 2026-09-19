@@ -80,7 +80,6 @@ export default function MenuPage() {
   const [showMap, setShowMap] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [compact, setCompact] = useState(false);
   const sectionRefs = useRef<Record<number, HTMLElement | null>>({});
   const catBarRef = useRef<HTMLDivElement>(null);
 
@@ -90,23 +89,20 @@ export default function MenuPage() {
     if (saved) setCart(JSON.parse(saved));
   }, []);
 
-  // Прокрутили вниз — шапка сжимается, полоса категорий остаётся закреплённой
-  // и подсвечивает категорию, которая сейчас на экране.
+  // Подсветка категории по прокрутке (без сжатия шапки — оно давало скачок и перехлёст с баннером).
   useEffect(() => {
     let frame = 0;
     const onScroll = () => {
       if (frame) return;
       frame = requestAnimationFrame(() => {
         frame = 0;
-        setCompact(window.scrollY > 110);
-
-        // Активна секция, чей верх ближе всего снизу к закреплённой шапке.
+        const stickyH = catBarRef.current?.offsetHeight ?? 180;
         let current: number | null = null;
         let bestTop = -Infinity;
         for (const [id, el] of Object.entries(sectionRefs.current)) {
           if (!el) continue;
           const top = el.getBoundingClientRect().top;
-          if (top <= 150 && top > bestTop) {
+          if (top <= stickyH + 24 && top > bestTop) {
             bestTop = top;
             current = Number(id);
           }
@@ -163,12 +159,10 @@ export default function MenuPage() {
     }
   };
 
+  // В сетке кнопка уже в кадре — горизонтальный scrollIntoView не нужен.
   const scrollToCat = (catId: number) => {
     setActiveCat(catId);
     sectionRefs.current[catId]?.scrollIntoView({ behavior: "smooth", block: "start" });
-    // Прокрутить кнопку в видимую область
-    const btn = catBarRef.current?.querySelector(`[data-cat="${catId}"]`) as HTMLElement;
-    btn?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   };
 
   const openModal = async (item: Item) => {
@@ -192,7 +186,7 @@ export default function MenuPage() {
   return (
     <div className={styles.page} style={{ background: BG, minHeight: "100vh", fontFamily: "'Inter', -apple-system, sans-serif" }}>
 
-      <header className={styles.header} data-compact={compact && !search}>
+      <header className={styles.header}>
         <div className={styles.hoursBar}>
           <span className={styles.hoursFull}>{CAFE_INFO.hoursShort}</span>
           <span className={styles.hoursMobile}>
@@ -233,16 +227,18 @@ export default function MenuPage() {
             <input className={styles.search} type="text" placeholder="🔍 Найти блюдо..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
-        {!search && (
-          <div ref={catBarRef} className={styles.cats}>
-            {visibleCats.map(cat => (
-              <button key={cat.id} type="button" data-cat={cat.id} data-on={activeCat === cat.id} onClick={() => scrollToCat(cat.id)}>
-                {CAT_ICONS[cat.name] ?? "🍴"} {cat.name}
-              </button>
-            ))}
-          </div>
-        )}
       </header>
+
+      {!search && (
+        <div ref={catBarRef} className={styles.cats}>
+          {visibleCats.map(cat => (
+            <button key={cat.id} type="button" data-cat={cat.id} data-on={activeCat === cat.id} onClick={() => scrollToCat(cat.id)}>
+              <span className={styles.catIcon} aria-hidden="true">{CAT_ICONS[cat.name] ?? "🍴"}</span>
+              <span className={styles.catLabel}>{cat.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 16px" }}>
         <div inert={tab !== "menu"}>
@@ -324,7 +320,7 @@ export default function MenuPage() {
           const catItems = items.filter(i => i.categoryId === cat.id);
           if (!catItems.length) return null;
           return (
-            <section key={cat.id} ref={el => { sectionRefs.current[cat.id] = el; }} style={{ marginBottom: 32, scrollMarginTop: 108 }}>
+            <section key={cat.id} ref={el => { sectionRefs.current[cat.id] = el; }} style={{ marginBottom: 32, scrollMarginTop: 200 }}>
               <h2 style={{ fontWeight: 800, fontSize: 22, color: THEME.text, margin: "0 0 14px", letterSpacing: "-0.03em" }}>
                 {CAT_ICONS[cat.name] ?? "🍴"} {cat.name}
               </h2>
