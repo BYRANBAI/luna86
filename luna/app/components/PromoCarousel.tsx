@@ -49,27 +49,38 @@ export default function PromoCarousel({ onTab, onMap }: Props) {
       >
         {PROMOS.map(promo => (
           <article key={promo.id} className={styles.promoSlide}>
-            <span className={styles.promoBadge}>{promo.badge}</span>
-            <h3 className={styles.promoTitle}>{promo.title}</h3>
-            <p className={styles.promoText}>{promo.subtitle}</p>
-
-            {promo.action && (
-              promo.action.kind === "tel" ? (
-                <a href={`tel:${promo.action.value}`} className={styles.promoCta}>{promo.action.label}</a>
-              ) : (
-                <button
-                  className={styles.promoCta}
-                  onClick={() => {
-                    if (promo.action?.kind === "tab") onTab(promo.action.value);
-                    if (promo.action?.kind === "map") onMap();
-                  }}
-                >
-                  {promo.action.label}
-                </button>
-              )
+            {promo.image && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                className={styles.promoPhoto}
+                src={promo.image}
+                alt=""
+                aria-hidden="true"
+                draggable={false}
+              />
             )}
+            <div className={styles.promoShade} aria-hidden="true" />
+            <div className={styles.promoContent}>
+              <span className={styles.promoBadge}>{promo.badge}</span>
+              <h3 className={styles.promoTitle}>{promo.title}</h3>
+              <p className={styles.promoText}>{promo.subtitle}</p>
 
-            <span className={styles.promoMoon} aria-hidden="true" />
+              {promo.action && (
+                promo.action.kind === "tel" ? (
+                  <a href={`tel:${promo.action.value}`} className={styles.promoCta}>{promo.action.label}</a>
+                ) : (
+                  <button
+                    className={styles.promoCta}
+                    onClick={() => {
+                      if (promo.action?.kind === "tab") onTab(promo.action.value);
+                      if (promo.action?.kind === "map") onMap();
+                    }}
+                  >
+                    {promo.action.label}
+                  </button>
+                )
+              )}
+            </div>
           </article>
         ))}
       </div>

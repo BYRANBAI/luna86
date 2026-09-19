@@ -29,7 +29,6 @@ const CAT_ICONS: Record<string, string> = {
 };
 
 const ACCENT = THEME.orange;
-const BG = THEME.bg;
 
 // Функция генерации градиентов для placeholder изображений
 const getPlaceholderGradient = (name: string) => {
@@ -184,7 +183,7 @@ export default function MenuPage() {
   const filteredItems = search ? items.filter(i => i.name.toLowerCase().includes(search.toLowerCase())) : null;
 
   return (
-    <div className={styles.page} style={{ background: BG, minHeight: "100vh", fontFamily: "'Inter', -apple-system, sans-serif" }}>
+    <div className={styles.page} style={{ minHeight: "100vh", fontFamily: "'Inter', -apple-system, sans-serif" }}>
 
       <header className={styles.header}>
         <div className={styles.hoursBar}>

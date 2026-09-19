@@ -6,11 +6,31 @@
   --shadow-accent: 0 4px 14px rgba(245, 130, 32, 0.28);
   --shadow-accent-hover: 0 8px 22px rgba(245, 130, 32, 0.36);
   --shadow-sheet: 0 -16px 48px rgba(92, 70, 46, 0.18);
+  position: relative;
   min-width: 0;
   max-width: 100%;
   /* clip, а не hidden: hidden создаёт скролл-контейнер и ломает position: sticky у шапки. */
   overflow-x: clip;
   padding-bottom: calc(var(--nav-height) + 150px);
+  background: #F6F0E8;
+  isolation: isolate;
+}
+
+/* Лунный суши-кадр — атмосфера страницы под кремовой вуалью. */
+.page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(251, 247, 241, 0.72) 0%,
+      rgba(246, 240, 232, 0.84) 36%,
+      rgba(246, 240, 232, 0.94) 100%
+    ),
+    url("/images/atmosphere/luna-sushi-moon.webp") center 18% / cover no-repeat;
 }
 
 .page *,
@@ -462,19 +482,60 @@
 .promoSlide {
   position: relative;
   scroll-snap-align: start;
-  min-height: 176px;
-  padding: 24px 132px 24px 26px;
+  min-height: 200px;
+  padding: 0;
   box-sizing: border-box;
   border-radius: 24px;
   overflow: hidden;
-  background: linear-gradient(100deg, #F7F1E8 42%, #E8DCC8 100%);
+  background: #FBF7F1;
   border: 1px solid #E8DFD2;
   box-shadow: var(--shadow-card);
+}
+
+/* Фото баннера — только правая половина, не залезает под текст. */
+.promoPhoto {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 42%;
+  width: auto;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Плотная панель слева — текст не сливается с едой. */
+.promoShade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    #FBF7F1 0%,
+    #FBF7F1 40%,
+    rgba(251, 247, 241, 0.92) 48%,
+    rgba(251, 247, 241, 0.2) 62%,
+    transparent 78%
+  );
+}
+
+.promoContent {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
   gap: 8px;
+  min-height: 200px;
+  max-width: 48%;
+  padding: 24px 16px 24px 26px;
+  box-sizing: border-box;
 }
 
 .promoBadge {
@@ -496,13 +557,14 @@
   line-height: 1.18;
   color: #1C2430;
   white-space: pre-line;
+  text-shadow: none;
 }
 
 .promoText {
   margin: 0;
   font-size: 14px;
   line-height: 1.45;
-  color: #8A8178;
+  color: #6B5344;
   max-width: 100%;
 }
 
@@ -534,19 +596,7 @@
 }
 
 .promoMoon {
-  position: absolute;
-  right: 22px;
-  top: 50%;
-  width: 96px;
-  height: 96px;
-  margin-top: -48px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 36% 30%, #FFFDF8 0%, #FBF1E0 46%, #F0DFC6 100%);
-  box-shadow:
-    0 10px 26px rgba(140, 105, 60, 0.16),
-    inset -7px -7px 16px rgba(196, 168, 128, 0.3);
-  animation: moonFloat 9s ease-in-out infinite;
-  pointer-events: none;
+  display: none;
 }
 
 /* Мягкие кратеры, чтобы круг читался как луна */
@@ -888,9 +938,29 @@
   }
 
   .promoSlide {
-    min-height: 160px;
-    padding: 20px 104px 20px 18px;
+    min-height: 176px;
     border-radius: 20px;
+  }
+
+  .promoContent {
+    min-height: 176px;
+    max-width: 52%;
+    padding: 18px 12px 18px 18px;
+  }
+
+  .promoPhoto {
+    left: 38%;
+  }
+
+  .promoShade {
+    background: linear-gradient(
+      90deg,
+      #FBF7F1 0%,
+      #FBF7F1 36%,
+      rgba(251, 247, 241, 0.95) 46%,
+      rgba(251, 247, 241, 0.25) 60%,
+      transparent 76%
+    );
   }
 
   .promoTitle {
@@ -899,13 +969,6 @@
 
   .promoText {
     font-size: 13px;
-  }
-
-  .promoMoon {
-    right: 14px;
-    width: 76px;
-    height: 76px;
-    margin-top: -38px;
   }
 
   .card {

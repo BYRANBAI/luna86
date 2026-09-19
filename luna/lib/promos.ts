@@ -12,6 +12,8 @@ export type Promo = {
   badge: string;
   title: string;
   subtitle: string;
+  /** Фоновое фото баннера (правая часть кадра). */
+  image?: string;
   action?: PromoAction;
 };
 
@@ -21,12 +23,14 @@ export const PROMOS: Promo[] = [
     badge: "АКЦИЯ",
     title: "Бесплатная доставка\nот 1 000 ₽",
     subtitle: "Заказывайте онлайн — привезём горячим",
+    image: "/images/atmosphere/luna-sushi-moon.webp",
   },
   {
     id: "bonuses",
     badge: "БОНУСЫ",
     title: "Копите бонусы\nс каждого заказа",
     subtitle: "Списывайте их при оформлении следующего",
+    image: "/images/atmosphere/sushi-slate-banner.webp",
     action: { kind: "tab", value: "profile", label: "Войти" },
   },
   {
@@ -34,6 +38,7 @@ export const PROMOS: Promo[] = [
     badge: "СТОЛИК",
     title: "Забронируйте стол\nзаранее",
     subtitle: `Звоните ${CAFE_INFO.phone}`,
+    image: "/images/atmosphere/sushi-slate-banner.webp",
     action: { kind: "tel", value: CAFE_INFO.phoneHref, label: "Позвонить" },
   },
   {
@@ -41,6 +46,7 @@ export const PROMOS: Promo[] = [
     badge: "МЫ ЗДЕСЬ",
     title: CAFE_INFO.address.replace(", г. Покачи", ""),
     subtitle: "Будни 10:00–23:00 · Выходные 10:00–24:00",
+    image: "/images/atmosphere/luna-sushi-moon.webp",
     action: { kind: "map", label: "На карте" },
   },
 ];
